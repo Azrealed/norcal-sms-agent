@@ -6,6 +6,8 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const Database = require('better-sqlite3');
+const SqliteStoreFactory = require('better-sqlite3-session-store');
+const SqliteStore = SqliteStoreFactory(session);
 const path = require('path');
 const fs = require('fs');
 
@@ -109,7 +111,8 @@ app.use(session({
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 },
+  store: new SqliteStore({ client: db })
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
