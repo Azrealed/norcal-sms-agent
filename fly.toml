@@ -1,6 +1,9 @@
 # fly.toml for norcal-sms-agent
 app = "norcal-sms-agent"
 
+[build]
+  dockerfile = "Dockerfile"
+
 [env]
   PORT = "8080"
 
