@@ -322,7 +322,13 @@ app.get('/api/me', (req, res) => {
   res.json({ authenticated: !!req.session.authenticated });
 });
 
-app.post('/api/login', (req, res) => {  const rememberMe = req.body.rememberMe === true;  if (rememberMe) {    req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days  } else {    req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days (default)  }
+app.post('/api/login', (req, res) => {
+  const rememberMe = req.body.rememberMe === true;
+  if (rememberMe) {
+    req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
+  } else {
+    req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000;
+  }
   const { password } = req.body;
   if (password === DASHBOARD_PASSWORD) {
     req.session.authenticated = true;
