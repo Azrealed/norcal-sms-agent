@@ -116,6 +116,61 @@
     .stat-card .stat-label { font-size: .75rem; color: #94a3b8; margin-top: 4px; }
     .empty { text-align: center; color: #64748b; padding: 2rem; }
     .hidden { display: none !important; }
+  
+  /* ── Mobile Responsive ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .conv-list { width: 100%; border-right: none; }
+    .detail-body { flex-direction: column; }
+    .crm-panel { width: 100%; border-left: none; border-top: 1px solid #334155; max-height: 50vh; }
+    .conv-detail { width: 100%; display: none; }
+    .conv-detail.show { display: flex; }
+    .conv-list.hide { display: none; }
+    .detail-header { flex-wrap: wrap; }
+    .detail-header .dh-actions { width: 100%; justify-content: flex-start; }
+  }
+
+  @media (max-width: 480px) {
+    body { font-size: 14px; }
+    .conv-item { padding: .6rem .75rem; }
+    .conv-search input { font-size: 16px; }
+    .crm-panel { max-height: 40vh; }
+    .detail-header { padding: .5rem .75rem; }
+    .detail-header .dh-phone { font-size: .9rem; }
+    .messages-area { padding: .6rem .75rem; }
+    .msg { max-width: 85%; font-size: .85rem; }
+    .reply-area { padding: .5rem .75rem; }
+    .reply-area textarea { font-size: 16px; }
+    .crm-panel .crm-section { padding: .6rem .75rem; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-card .stat-value { font-size: 1.4rem; }
+    .topbar { padding: .5rem .75rem; }
+    .topbar h2 { font-size: .9rem; }
+    .crm-panel .crm-field input, .crm-panel .crm-field select { font-size: 16px; }
+  }
+
+  /* Mobile nav bar */
+  .mobile-bar { display: none; }
+  @media (max-width: 900px) {
+    .mobile-bar { display: flex; align-items: center; gap: .5rem; padding: .5rem .75rem; background: #1e293b; border-bottom: 1px solid #334155; }
+    .mobile-bar .hamburger { font-size: 1.2rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; color: #94a3b8; }
+    .mobile-bar .hamburger:hover { background: #334155; color: #e2e8f0; }
+    .mobile-bar .mobile-title { font-size: .9rem; font-weight: 600; flex: 1; }
+    .mobile-bar .mobile-back { display: none; font-size: .85rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; color: #22c55e; }
+    .mobile-bar .mobile-back:hover { background: #22c55e20; }
+    .mobile-bar .mobile-back.show { display: block; }
+    .mobile-bar .mobile-badge { background: #ef4444; color: #fff; font-size: .7rem; padding: 1px 7px; border-radius: 10px; }
+  }
+
+  /* Mobile sidebar overlay */
+  .sidebar-overlay { display: none; }
+  @media (max-width: 900px) {
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; }
+    .sidebar-overlay.show { display: block; }
+    .sidebar-overlay .sidebar { display: flex; position: fixed; left: 0; top: 0; bottom: 0; z-index: 101; animation: slideIn 0.2s ease; }
+    @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+  }
+
   </style>
 </head>
 <body>
@@ -137,8 +192,35 @@
     <div class="sidebar-footer">
       <a href="#" onclick="logout()" style="color:#ef4444;text-decoration:none;font-size:.8rem;">Sign Out</a>
     </div>
+    </div>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="hideMobileSidebar()">
+    <div class="sidebar" onclick="event.stopPropagation()">
+      <div class="sidebar-header">
+        <h1>📋 NorCal SMS Agent</h1>
+        <p>AI-powered lead engagement</p>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-item active" data-tab="conversations" onclick="switchTab('conversations'); hideMobileSidebar()">💬 Conversations <span class="badge" id="unread-badge-mobile">0</span></div>
+        <div class="nav-item" data-tab="knowledge" onclick="switchTab('knowledge'); hideMobileSidebar()">📚 Knowledge Base</div>
+        <div class="nav-item" data-tab="settings" onclick="switchTab('settings'); hideMobileSidebar()">⚙️ Settings</div>
+        <div class="nav-item" data-tab="optouts" onclick="switchTab('optouts'); hideMobileSidebar()">🚫 Opt-Outs</div>
+      </div>
+      <div class="sidebar-footer">
+        <div style="font-size:.75rem;color:#64748b;padding:0 .75rem .5rem;" id="footer-stats-mobile"></div>
+        <a href="#" onclick="logout()" style="color:#ef4444;text-decoration:none;font-size:.8rem;display:block;padding:.75rem;">Sign Out</a>
+      </div>
+    </div>
   </div>
 
+  <!-- Mobile Top Bar -->
+  <div class="mobile-bar">
+    <span class="hamburger" onclick="showMobileSidebar()">☰</span>
+    <span class="mobile-title">NorCal SMS Agent</span>
+    <span class="mobile-badge" id="mobile-badge">0</span>
+    <span class="mobile-back" id="mobile-back" onclick="showConversationList()">← Back</span>
+  </div>
   <!-- Main -->
   <div class="main">
     <!-- Tab: Conversations -->
@@ -543,6 +625,61 @@
       loadConversations();
       loadStats();
     }
+
+    
+    // ── Mobile Functions ──
+    function showMobileSidebar() {
+      document.getElementById('sidebar-overlay').classList.add('show');
+    }
+    function hideMobileSidebar() {
+      document.getElementById('sidebar-overlay').classList.remove('show');
+    }
+    function openConversation(id) {
+      selectConversation(id);
+      document.querySelector('.conv-list').classList.add('hide');
+      document.querySelector('.conv-detail').classList.add('show');
+      document.getElementById('mobile-back').classList.add('show');
+      document.getElementById('mobile-title').textContent = 'Conversation';
+    }
+    function showConversationList() {
+      document.querySelector('.conv-list').classList.remove('hide');
+      document.querySelector('.conv-detail').classList.remove('show');
+      document.getElementById('mobile-back').classList.remove('show');
+      document.getElementById('mobile-title').textContent = 'NorCal SMS Agent';
+    }
+
+    // Override selectConversation to also handle mobile
+    const origSelect = selectConversation;
+    selectConversation = function(id) {
+      origSelect(id);
+      if (window.innerWidth <= 900) {
+        document.querySelector('.conv-list').classList.add('hide');
+        document.querySelector('.conv-detail').classList.add('show');
+        document.getElementById('mobile-back').classList.add('show');
+        document.getElementById('mobile-title').textContent = 'Conversation';
+      }
+    };
+
+    // Update mobile unread badge
+    const origRender = renderConversationList;
+    renderConversationList = function() {
+      origRender();
+      const badge = document.getElementById('mobile-badge');
+      const total = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+      badge.textContent = total || '0';
+      const mobileBadge = document.getElementById('unread-badge-mobile');
+      if (mobileBadge) mobileBadge.textContent = total || '0';
+    };
+
+    // Update mobile footer stats
+    const origStats = loadStats;
+    loadStats = function() {
+      origStats();
+      fetch('/api/stats').then(r => r.json()).then(stats => {
+        const el = document.getElementById('footer-stats-mobile');
+        if (el) el.textContent = stats.total_conversations + ' convos | ' + stats.messages_today + ' msgs today';
+      });
+    };
 
     // ── Auto-refresh conversations every 10 seconds ──
     setInterval(() => {
