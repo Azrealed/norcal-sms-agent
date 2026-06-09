@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NorCal SMS Agent - Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-box { background: #1e293b; padding: 2.5rem; border-radius: 12px; width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+    h1 { font-size: 1.5rem; margin-bottom: .5rem; }
+    p { color: #94a3b8; margin-bottom: 1.5rem; font-size: .9rem; }
+    input { width: 100%; padding: .75rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem; margin-bottom: 1rem; }
+    input:focus { outline: none; border-color: #22c55e; }
+    button { width: 100%; padding: .75rem; background: #22c55e; color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    button:hover { background: #16a34a; }
+    .error { color: #ef4444; font-size: .85rem; margin-top: .5rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>📋 NorCal SMS Agent</h1>
+    <p>Enter the dashboard password to continue</p>
+    <input type="password" id="password" placeholder="Dashboard password" autofocus>
+    <button onclick="login()">Sign In</button>
+    <div class="error" id="error">Invalid password</div>
+  </div>
+  <script>
+    document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+    async function login() {
+      const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: document.getElementById('password').value}) });
+      if (res.ok) { window.location.href = '/'; } else { document.getElementById('error').style.display = 'block'; }
+    }
+  </script>
+</body>
+</html>
