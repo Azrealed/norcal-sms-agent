@@ -12,22 +12,6 @@ const fs = require('fs');
 // ── Config ──
 
 // Webhook: delivery status from smsblast.io
-app.post('/webhook/status', (req, res) => {
-  try {
-    const { message_id, status, to, error } = req.body;
-    console.log('Delivery status:', message_id, status, to, error || '');
-    if (message_id) {
-      const stmt = db.prepare('UPDATE messages SET status = ? WHERE smsblast_sid = ?');
-      stmt.run(status || 'unknown', message_id);
-    }
-    res.json({ success: true });
-  } catch (e) {
-    console.error('Status webhook error:', e);
-    res.json({ success: true });
-  }
-});
-
-
 const PORT = process.env.PORT || 8080;
 const SMSBLAST_API_KEY = process.env.SMSBLAST_API_KEY;
 const SMSBLAST_FROM = process.env.SMSBLAST_FROM_NUMBER || '+18884645732';
@@ -102,6 +86,22 @@ db.exec(`
 
 // ── Express App ──
 const app = express();
+
+app.post('/webhook/status', (req, res) => {
+  try {
+    const { message_id, status, to, error } = req.body;
+    console.log('Delivery status:', message_id, status, to, error || '');
+    if (message_id) {
+      const stmt = db.prepare('UPDATE messages SET status = ? WHERE smsblast_sid = ?');
+      stmt.run(status || 'unknown', message_id);
+    }
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Status webhook error:', e);
+    res.json({ success: true });
+  }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
