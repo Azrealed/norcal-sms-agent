@@ -65,7 +65,24 @@
     .badge-unread { background: #ef4444; color: #fff; font-size: .7rem; padding: 1px 7px; border-radius: 10px; }
 
     /* ── Conversation Detail ── */
+    
+    /* ── CRM Panel ── */
     .conv-detail { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .detail-body { flex: 1; display: flex; overflow: hidden; }
+    .detail-main { flex: 3; display: flex; flex-direction: column; min-width: 0; }
+    .crm-panel { width: 300px; background: #1e293b; border-left: 1px solid #334155; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; }
+    .crm-panel .crm-section { padding: .8rem 1rem; border-bottom: 1px solid #334155; }
+    .crm-panel .crm-section h4 { font-size: .75rem; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    .crm-panel .crm-field { margin-bottom: 8px; }
+    .crm-panel .crm-field label { font-size: .7rem; color: #94a3b8; display: block; margin-bottom: 2px; }
+    .crm-panel .crm-field input, .crm-panel .crm-field select { width: 100%; padding: .35rem .5rem; background: #0f172a; border: 1px solid #334155; border-radius: 5px; color: #e2e8f0; font-size: .8rem; }
+    .crm-panel .crm-field input:focus, .crm-panel .crm-field select:focus { outline: none; border-color: #22c55e; }
+    .crm-panel .crm-field textarea { width: 100%; padding: .35rem .5rem; background: #0f172a; border: 1px solid #334155; border-radius: 5px; color: #e2e8f0; font-size: .8rem; resize: vertical; min-height: 60px; }
+    .crm-panel .crm-field textarea:focus { outline: none; border-color: #22c55e; }
+    .crm-panel .crm-saved { font-size: .7rem; color: #22c55e; margin-top: 2px; display: none; }
+    .crm-info-row { display: flex; justify-content: space-between; font-size: .78rem; padding: 2px 0; color: #cbd5e1; }
+    .crm-info-row .crm-label { color: #64748b; }
+
     .detail-header { padding: .75rem 1.25rem; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
     .detail-header .dh-info { flex: 1; min-width: 0; }
     .detail-header .dh-phone { font-size: 1rem; font-weight: 600; }
@@ -147,10 +164,77 @@
             </select>
           </div>
         </div>
-        <div class="messages-area" id="messages-area"><div class="empty">Select a conversation to view messages</div></div>
-        <div class="reply-area" id="reply-area" style="display:none;">
-          <textarea id="reply-input" placeholder="Type a reply..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
-          <button class="btn btn-primary btn-sm" onclick="sendReply()">Send</button>
+        <div class="detail-body">
+          <div class="detail-main">
+            <div class="messages-area" id="messages-area"><div class="empty">Select a conversation to view messages</div></div>
+            <div class="reply-area" id="reply-area" style="display:none;">
+              <textarea id="reply-input" placeholder="Type a reply..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
+              <button class="btn btn-primary btn-sm" onclick="sendReply()">Send</button>
+            </div>
+          </div>
+          <div class="crm-panel" id="crm-panel" style="display:none;">
+            <div class="crm-section">
+              <h4>Contact Info</h4>
+              <div class="crm-field">
+                <label>Name</label>
+                <input type="text" id="crm-name" placeholder="Contact name" onchange="crmAutoSave('contact_name', this.value)">
+                <div class="crm-saved" id="crm-saved-name">✓ Saved</div>
+              </div>
+              <div class="crm-field">
+                <label>Phone</label>
+                <input type="text" id="crm-phone" readonly style="opacity:.7;">
+              </div>
+            </div>
+            <div class="crm-section">
+              <h4>Property</h4>
+              <div class="crm-field">
+                <label>Address</label>
+                <input type="text" id="crm-address" placeholder="123 Main St, City, CA" onchange="crmAutoSave('property_address', this.value)">
+                <div class="crm-saved" id="crm-saved-address">✓ Saved</div>
+              </div>
+              <div class="crm-field">
+                <label>Lead Source</label>
+                <select id="crm-source" onchange="crmAutoSave('lead_source', this.value)">
+                  <option value="">- Select -</option>
+                  <option value="sms-blast">Cold SMS Blast</option>
+                  <option value="property-radar">PropertyRadar</option>
+                  <option value="facebook-ad">Facebook Ad</option>
+                  <option value="google-ad">Google Ad</option>
+                  <option value="d4d">D4D</option>
+                  <option value="resimpli">Resimpli</option>
+                  <option value="caller">Cold Caller</option>
+                  <option value="referral">Referral</option>
+                  <option value="other">Other</option>
+                </select>
+                <div class="crm-saved" id="crm-saved-source">✓ Saved</div>
+              </div>
+            </div>
+            <div class="crm-section">
+              <h4>Status</h4>
+              <div class="crm-field">
+                <label>Lead Status</label>
+                <select id="crm-status" onchange="crmAutoSave('status', this.value)">
+                  <option value="active">Active</option>
+                  <option value="negotiating">Negotiating</option>
+                  <option value="deal">Deal 🔥</option>
+                  <option value="lost">Lost</option>
+                  <option value="dead">Dead</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <div class="crm-saved" id="crm-saved-status">✓ Saved</div>
+              </div>
+              <div class="crm-info-row"><span class="crm-label">Label</span><span id="crm-label-display">New</span></div>
+              <div class="crm-info-row"><span class="crm-label">AI Auto-Reply</span><span id="crm-ai-display">Enabled</span></div>
+              <div class="crm-info-row"><span class="crm-label">Created</span><span id="crm-created"></span></div>
+            </div>
+            <div class="crm-section" style="flex:1;">
+              <h4>Notes</h4>
+              <div class="crm-field" style="flex:1;">
+                <textarea id="crm-notes" placeholder="Add internal notes about this lead..." style="min-height:100px;" onchange="crmAutoSave('notes', this.value)"></textarea>
+                <div class="crm-saved" id="crm-saved-notes">✓ Saved</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -328,6 +412,29 @@
       loadConversations();
     }
 
+    
+    // ── CRM Auto-Save ──
+    let crmSaveTimers = {};
+    async function crmAutoSave(field, value) {
+      if (!selectedConvId) return;
+      clearTimeout(crmSaveTimers[field]);
+      crmSaveTimers[field] = setTimeout(async () => {
+        await fetch(\`/api/conversations/\${selectedConvId}\`, {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ [field]: value })
+        });
+        const savedEl = document.getElementById('crm-saved-' + field);
+        if (savedEl) {
+          savedEl.style.display = 'block';
+          setTimeout(() => { savedEl.style.display = 'none'; }, 2000);
+        }
+        // Update the conversation list
+        const conv = conversations.find(c => c.id === selectedConvId);
+        if (conv) conv[field] = value;
+        renderConversationList();
+      }, 500);
+    }
     async function sendReply() {
       const input = document.getElementById('reply-input');
       const msg = input.value.trim();

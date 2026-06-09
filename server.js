@@ -40,6 +40,7 @@ db.exec(`
     ai_enabled INTEGER DEFAULT 1,
     status TEXT DEFAULT 'active',
     label TEXT DEFAULT 'new',
+    notes TEXT DEFAULT '',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
   );
@@ -356,7 +357,7 @@ app.get('/api/conversations/:id', requireAuth, (req, res) => {
 });
 
 app.patch('/api/conversations/:id', requireAuth, (req, res) => {
-  const { contact_name, property_address, lead_source, ai_enabled, status, label } = req.body;
+  const { contact_name, property_address, lead_source, ai_enabled, status, label, notes } = req.body;
   const updates = [];
   const params = [];
   if (contact_name !== undefined) { updates.push('contact_name = ?'); params.push(contact_name); }
@@ -365,6 +366,7 @@ app.patch('/api/conversations/:id', requireAuth, (req, res) => {
   if (ai_enabled !== undefined) { updates.push('ai_enabled = ?'); params.push(ai_enabled ? 1 : 0); }
   if (status !== undefined) { updates.push('status = ?'); params.push(status); }
   if (label !== undefined) { updates.push('label = ?'); params.push(label); }
+  if (notes !== undefined) { updates.push('notes = ?'); params.push(notes); }
   updates.push("updated_at = datetime('now')");
   params.push(req.params.id);
   db.prepare(`UPDATE conversations SET ${updates.join(', ')} WHERE id = ?`).run(...params);
