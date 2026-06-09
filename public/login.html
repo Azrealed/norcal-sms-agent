@@ -54,6 +54,10 @@
     <div class="footer-text">NorCal Home Offer &bull; AI SMS Agent</div>
   </div>
   <script>
+    // If already authenticated, redirect to dashboard
+    fetch('/api/me').then(r => r.json()).then(data => {
+      if (data.authenticated) window.location.href = '/';
+    });
     document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
     // Focus and show keyboard on mobile
     document.getElementById('password').focus();
