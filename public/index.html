@@ -172,6 +172,7 @@
     @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
   }
 
+      @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -228,7 +229,7 @@
     <div id="tab-conversations" class="content">
       <div class="conv-list">
         <div class="conv-search"><input type="text" placeholder="Search phone, name, or address..." id="conv-search" oninput="loadConversations()"></div>
-        <div class="conv-items" id="conv-items"><div class="empty">Loading...</div></div>
+        <div class="conv-items" id="conv-items"><div class="empty" id="conv-loading">Loading... <div class="spinner" style="margin:8px auto;width:20px;height:20px;border:2px solid #334155;border-top:2px solid #22c55e;border-radius:50%;animation:spin 1s linear infinite;"></div></div></div>
       </div>
       <div class="conv-detail" id="detail-panel">
         <div class="detail-header" id="detail-header">
@@ -402,17 +403,31 @@
 
     // ── Conversations ──
     async function loadConversations() {
-      const search = document.getElementById('conv-search').value;
-      const url = search ? `/api/conversations?search=${encodeURIComponent(search)}` : '/api/conversations';
-      const data = await fetch(url).then(r => r.json());
-      conversations = data;
+      try {
+        const search = document.getElementById('conv-search').value;
+        const url = search ? `/api/conversations?search=${encodeURIComponent(search)}` : '/api/conversations';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Request failed: ' + res.status);
+        const data = await res.json();
+        conversations = data;
+      } catch(e) {
+        console.error('loadConversations:', e);
+        conversations = [];
+      }
       renderConversationList();
     }
 
     function renderConversationList() {
       const el = document.getElementById('conv-items');
       let totalUnread = 0;
-      if (conversations.length === 0) { el.innerHTML = '<div class="empty">No conversations yet</div>'; return; }
+      const loadingEl = document.getElementById('conv-loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (conversations.length === 0) {
+        document.getElementById('conv-empty').style.display = 'block';
+        return;
+      } else {
+        document.getElementById('conv-empty').style.display = 'none';
+      }
       el.innerHTML = conversations.map(c => {
         totalUnread += c.unread_count || 0;
         const active = c.id === selectedConvId ? 'active' : '';
