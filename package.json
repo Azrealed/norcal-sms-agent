@@ -4,8 +4,9 @@
   "description": "AI SMS Agent for NorCal Home Offer - smsblast.io + DeepSeek",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node seed-db.js && node server.js",
+    "dev": "node seed-db.js && node server.js",
+    "seed": "node seed-db.js"
   },
   "dependencies": {
     "express": "^4.21.0",
