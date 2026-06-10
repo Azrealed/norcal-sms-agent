@@ -378,6 +378,7 @@
 
     // ── Init ──
     document.addEventListener('DOMContentLoaded', async () => {
+      console.log('App v1781049708942 booting...');
       const me = await fetch('/api/me').then(r => r.json());
       if (!me.authenticated) { window.location.href = '/login'; return; }
       setWebhookUrl();
