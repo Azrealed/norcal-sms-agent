@@ -114,7 +114,40 @@ app.use(session({
   cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 },
   store: new SqliteStore({ client: db })
 }));
-app.use(express.static(path.join(__dirname, 'public')));
+// ── Serve Static Files ──
+app.use('/login', express.static(path.join(__dirname, 'public/login.html'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
+
+// Dashboard: server-rendered with auth state embedded
+app.get('/', (req, res) => {
+  const indexPath = path.join(__dirname, 'public/index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+  
+  // Inject auth state directly into the page
+  const authenticated = req.session && req.session.authenticated;
+  html = html.replace(
+    '<!--AUTH_STATE-->',
+    `<script>window.__authState = ${!!authenticated};</script>`
+  );
+  
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.send(html);
+});
+
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
 
 // ── Auth Middleware ──
 function requireAuth(req, res, next) {
