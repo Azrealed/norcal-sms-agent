@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node seed-db.js && node server.js",
     "dev": "node seed-db.js && node server.js",
-    "seed": "node seed-db.js"
+    "seed": "node seed-db.js",
+    "kb:sync": "node scripts/update-kb-facts.js",
+    "test": "node --test tests/*.test.js",
+    "harness": "node tests/harness.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",

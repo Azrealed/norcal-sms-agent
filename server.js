@@ -10,6 +10,12 @@ const SqliteStoreFactory = require('better-sqlite3-session-store');
 const SqliteStore = SqliteStoreFactory(session);
 const path = require('path');
 const fs = require('fs');
+const { syncKnowledgeBase } = require('./lib/knowledge');
+const { buildSystemPrompt, composeReply } = require('./lib/persona');
+const { planInbound } = require('./lib/inbound');
+const { canSendSms, isTestMode, isSuppressed } = require('./lib/policy');
+const { syncSellerToGhl } = require('./lib/ghl');
+const { ensureConversationColumns } = require('./lib/schema');
 
 // ── Config ──
 
@@ -87,8 +93,22 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_messages_time ON messages(timestamp);
 `);
 
+ensureConversationColumns(db);
+try {
+  const kbSync = syncKnowledgeBase(db);
+  console.log(`[KB] synced ${kbSync.upserted} standard answers; turned off ${kbSync.deactivated.length} outdated answers`);
+  if (kbSync.deactivated.length) {
+    console.log(`[KB] turned off: ${kbSync.deactivated.join(' | ')}`);
+  }
+} catch (err) {
+  console.error('[KB] sync failed, continuing with the existing knowledge base:', err.message);
+}
+
 // ── Express App ──
 const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.post('/webhook/status', (req, res) => {
   try {
@@ -104,9 +124,6 @@ app.post('/webhook/status', (req, res) => {
     res.json({ success: true });
   }
 });
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: SESSION_SECRET,
   resave: false,
@@ -160,8 +177,13 @@ function requireAuth(req, res, next) {
 
 // ── Helpers ──
 
-/** Send SMS via smsblast.io API */
-async function sendSmsblast(phone, message) {
+/** Send SMS via smsblast.io API. Suppressed and opted-out numbers are never texted. */
+async function sendSmsblast(phone, message, { automated = false } = {}) {
+  const gate = canSendSms(phone, { automated, env: process.env, optedOut: isOptedOut(phone) });
+  if (!gate.ok) {
+    console.log(`[SMS blocked] ${phone} (${gate.reason})`);
+    return { success: false, error: gate.reason };
+  }
   const url = 'https://api.smsblast.io/api/v2/sms/send'; // endpoint from your API docs
   const body = {
     apiKey: SMSBLAST_API_KEY,
@@ -196,26 +218,7 @@ async function getAiReply(conversation, messages, contactName) {
   const kb = db.prepare('SELECT question, answer FROM knowledge_base WHERE active = 1').all();
   const knowledgeContext = kb.map(k => `Q: ${k.question}\nA: ${k.answer}`).join('\n\n');
 
-  const systemPrompt = `You are an AI SMS assistant for NorCal Home Offer, a real estate wholesaling company in Northern California. You help respond to homeowners who may be interested in selling their property.
-
-Your tone is professional, friendly, and direct. Keep responses CONCISE — SMS messages should be 1-3 short paragraphs max. No markdown, no emojis, just plain text.
-
-Key points about the business:
-- We make CASH offers for houses
-- No repairs needed — we buy AS-IS
-- Close on the homeowner's timeline
-- We cover all closing costs
-- We buy in Sacramento, Yolo, Placer, El Dorado, and surrounding counties
-
-${knowledgeContext}
-
-Rules:
-- Be helpful but don't make specific price promises
-- If they ask about price or offers, give general info and say someone will follow up
-- If they seem serious, encourage them to reply with their property address
-- NEVER share internal business information
-- If they ask something you don't know, say "Let me have Derek reach out to you directly about that"
-- If they text STOP/UNSUBSCRIBE/CANCEL — do not try to convince them, just acknowledge`;
+  const systemPrompt = buildSystemPrompt(knowledgeContext);
 
   // Build context from conversation history (last 10 messages)
   const recentMessages = messages.slice(-10).map(m =>
@@ -276,26 +279,26 @@ app.post('/webhook/inbound', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Check opt-out
-  if (isOptedOut(fromPhone)) {
-    console.log(`[OptOut] ${fromPhone} is opted out, ignoring`);
-    return res.json({ handled: true, reply: null });
-  }
+  const plan = planInbound({
+    phone: fromPhone,
+    message,
+    env: process.env,
+    optedOut: isOptedOut(fromPhone),
+  });
 
-  // Check for opt-out keywords
-  const upperMsg = message.toUpperCase().trim();
-  if (['STOP', 'UNSUBSCRIBE', 'CANCEL', 'STOPALL', 'REMOVE'].includes(upperMsg)) {
+  if (plan.optOut) {
     db.prepare('INSERT OR IGNORE INTO opt_outs (phone, reason) VALUES (?, ?)').run(fromPhone, 'keyword_stop');
-    console.log(`[OptOut] ${fromPhone} opted out via keyword`);
-    // Auto-reply with confirmation
-    await sendSmsblast(fromPhone, "You've been unsubscribed. No more messages from NorCal Home Offer. Reply START to resubscribe.");
-    return res.json({ handled: true, reply: 'optout_confirmed' });
+    console.log(`[OptOut] ${fromPhone} opted out. No reply will be sent.`);
   }
-
-  // Check for re-subscribe
-  if (['START', 'YES', 'UNSTOP'].includes(upperMsg)) {
+  if (plan.clearOptOut) {
     db.prepare('DELETE FROM opt_outs WHERE phone = ?').run(fromPhone);
     console.log(`[OptOut] ${fromPhone} resubscribed`);
+  }
+  if (plan.reason === 'test_mode') {
+    console.log(`[TestMode] stored inbound from ${fromPhone}; AI reply skipped`);
+  }
+  if (plan.reason === 'suppressed' || isSuppressed(fromPhone)) {
+    console.log(`[Suppressed] stored inbound from ${fromPhone}; no text will be sent`);
   }
 
   // Find or create conversation
@@ -322,16 +325,20 @@ app.post('/webhook/inbound', async (req, res) => {
 
   let replyText = null;
 
-  // If AI is enabled for this conversation, generate and send a reply
-  if (conv.ai_enabled) {
-    const recentMessages = db.prepare(
-      'SELECT * FROM messages WHERE conversation_id = ? ORDER BY timestamp ASC'
-    ).all(convId);
-
-    replyText = await getAiReply(conv, recentMessages, conv.contact_name);
+  // Automatic replies only when the plan allows it and this conversation still has AI on.
+  if (plan.send && conv.ai_enabled) {
+    if (plan.replyMode === 'fixed') {
+      replyText = plan.fixedReply;
+    } else if (plan.replyMode === 'model') {
+      const recentMessages = db.prepare(
+        'SELECT * FROM messages WHERE conversation_id = ? ORDER BY timestamp ASC'
+      ).all(convId);
+      const draft = await getAiReply(conv, recentMessages, conv.contact_name);
+      replyText = composeReply({ inbound: message, modelReply: draft });
+    }
 
     if (replyText) {
-      const smsResult = await sendSmsblast(fromPhone, replyText);
+      const smsResult = await sendSmsblast(fromPhone, replyText, { automated: true });
       const smsStatus = smsResult.success ? 'sent' : 'failed';
 
       db.prepare(`INSERT INTO messages (conversation_id, body, direction, from_number, to_number, status)
@@ -340,6 +347,33 @@ app.post('/webhook/inbound', async (req, res) => {
       db.prepare(`UPDATE conversations SET 
         last_message = ?, last_message_time = datetime('now'), updated_at = datetime('now')
         WHERE id = ?`).run(replyText, convId);
+    }
+  }
+
+  if (plan.ghl) {
+    try {
+      const convFresh = db.prepare('SELECT * FROM conversations WHERE id = ?').get(convId);
+      const transcript = db.prepare(
+        'SELECT * FROM messages WHERE conversation_id = ? ORDER BY timestamp ASC'
+      ).all(convId);
+      const ghl = await syncSellerToGhl({
+        conversation: convFresh,
+        messages: transcript,
+        env: process.env,
+      });
+      if (ghl && ghl.contactId) {
+        db.prepare(`UPDATE conversations SET
+            ghl_contact_id = ?,
+            ghl_opportunity_id = ?,
+            ghl_note_fingerprint = ?,
+            ghl_pushed_at = CASE WHEN ghl_pushed_at IS NULL OR ghl_pushed_at = '' THEN datetime('now') ELSE ghl_pushed_at END
+          WHERE id = ?`).run(ghl.contactId, ghl.opportunityId || '', ghl.fingerprint || '', convId);
+        console.log(`[GHL] ${fromPhone} ${ghl.action}`);
+      } else if (ghl && ghl.reason && ghl.reason !== 'not_enough_conversation' && ghl.reason !== 'not_enough_detail' && ghl.reason !== 'only_acknowledgement' && ghl.reason !== 'price_only') {
+        console.log(`[GHL] ${fromPhone} skipped (${ghl.reason})`);
+      }
+    } catch (err) {
+      console.error('[GHL] unexpected error, inbound still saved:', err.message);
     }
   }
 
@@ -423,6 +457,11 @@ app.post('/api/conversations/:id/reply', requireAuth, async (req, res) => {
 
   const conv = db.prepare('SELECT * FROM conversations WHERE id = ?').get(req.params.id);
   if (!conv) return res.status(404).json({ error: 'Conversation not found' });
+  const gate = canSendSms(conv.phone, { automated: false, optedOut: isOptedOut(conv.phone) });
+  if (!gate.ok) {
+    const error = gate.reason === 'suppressed' ? 'This number cannot be texted.' : 'This number is opted out.';
+    return res.status(403).json({ error });
+  }
 
   const smsResult = await sendSmsblast(conv.phone, message);
   const status = smsResult.success ? 'sent' : 'failed';
@@ -537,9 +576,12 @@ app.get('*', (req, res) => {
 
 // ── Start Server ──
 app.listen(PORT, '0.0.0.0', () => {
+  const allowCount = String(process.env.AI_REPLY_ALLOWLIST || '').split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean).length;
   console.log(`\n📋 NorCal AI SMS Agent`);
   console.log(`   Dashboard: http://localhost:${PORT}`);
   console.log(`   Webhook:   http://localhost:${PORT}/webhook/inbound`);
   console.log(`   SMS API:   smsblast.io (via API key)`);
-  console.log(`   AI Model:  ${AI_MODEL}\n`);
+  console.log(`   AI Model:  ${AI_MODEL}`);
+  console.log(`   Test mode: ${isTestMode() ? 'ON' : 'OFF'} (${allowCount} allowlisted number${allowCount === 1 ? '' : 's'})`);
+  console.log(`   GHL:       ${process.env.GHL_API_TOKEN && process.env.GHL_LOCATION_ID ? 'configured' : 'not configured'}\n`);
 });
