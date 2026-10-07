@@ -13,7 +13,7 @@ test('a bot question is answered honestly even if the model lies', () => {
   });
   assert.equal(reply, HONEST_REPLY);
   assert.match(reply, /AI assistant/i);
-  assert.match(reply, /Derek can personally follow up/);
+  assert.match(reply, /Derek's AI assistant/);
   assert.doesNotMatch(reply, /no automation|voice note|just me|not a bot|real person/i);
   assert.doesNotMatch(reply, /[-–—]\s*Derek\s*$/);
 });

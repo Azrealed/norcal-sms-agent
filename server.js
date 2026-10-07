@@ -444,7 +444,7 @@ async function handleInboundWebhook(req, res) {
     } else if (stage === 'cold') {
       replyText = composeReply({
         inbound: message,
-        modelReply: "No problem. If anything changes, Derek can follow up.",
+        modelReply: "No problem. If anything changes, just text back.",
       });
     } else {
       const draft = await getAiReply(
