@@ -78,3 +78,19 @@ test('smsblast opt-out call: Bearer auth, E.164 number, result mapping', async (
   r = await smsblastOptOut('+1', { apiKey: '' });
   assert.equal(r.status, 'error_no_api_key');
 });
+
+test('a reaction that quotes our "Reply STOP to unsubscribe" footer is not an opt-out', () => {
+  const { isOptOutMessage, isClearNo, isWrongNumber } = require('../lib/policy');
+  const m = '\u200a\u200b👍\u200b to “\u200aHi there, Im looking to buy another property right now. Are you still interested in seeing how much I can pay for yours? Thanks -Derek Reply STOP to unsubscribe.\u200a”\u200a';
+  assert.equal(isOptOutMessage(m), false);
+  assert.equal(isClearNo(m), false);
+  assert.equal(isWrongNumber(m), false);
+  assert.equal(isOptOutMessage('Liked “No problem. Reply STOP to unsubscribe”'), false);
+  assert.equal(isOptOutMessage('STOP'), true);
+  assert.equal(isOptOutMessage('unsubscribe me'), true);
+});
+
+test('a seller quoting "stop texting me" in their own words is still an opt-out', () => {
+  const { isOptOutMessage } = require('../lib/policy');
+  assert.equal(isOptOutMessage('I already said "stop texting me"'), true);
+});
