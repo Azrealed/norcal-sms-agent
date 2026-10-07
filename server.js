@@ -246,33 +246,47 @@ async function getAiReply(conversation, messages, contactName, leadContext = {})
 
   const userPrompt = `Lead name: ${contactName || name || 'unknown'}\nAddress known: ${hasAddress ? 'YES — ' + addr : 'NO — need to learn it'}\nAsking price discussed: ${askingPrice}\nCondition: ${condition}\nLead score: ${score || 0}/100\n\nConversation:\n${recentMessages}${repeatWarning}\n\nWrite your reply:`;
 
-  try {
-    const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_tokens: 180,
-        temperature: 0.7
-      })
-    });
-    const data = await resp.json();
-    if (!resp.ok) {
-      console.error(`[AI Error] ${resp.status}: ${JSON.stringify(data)}`);
-      return null;
+  // Primary model plus fallbacks. OpenRouter tries the next model when one is rate-limited or down.
+  const models = [AI_MODEL, ...String(process.env.AI_FALLBACK_MODELS || 'openai/gpt-4o-mini,meta-llama/llama-3.3-70b-instruct')
+    .split(',').map((m) => m.trim()).filter((m) => m && m !== AI_MODEL)];
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: models[0],
+          models,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          max_tokens: 180,
+          temperature: 0.7
+        })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok) {
+        const text = data.choices?.[0]?.message?.content?.trim() || null;
+        if (text) {
+          if (data.model && data.model !== AI_MODEL) console.log(`[AI] reply came from fallback model ${data.model}`);
+          return text;
+        }
+        console.error(`[AI Error] empty reply (attempt ${attempt})`);
+      } else {
+        console.error(`[AI Error] ${resp.status} (attempt ${attempt}): ${JSON.stringify(data).slice(0, 300)}`);
+        if (resp.status < 500 && resp.status !== 429) return null;
+      }
+    } catch (err) {
+      console.error(`[AI Error] ${err.message} (attempt ${attempt})`);
     }
-    return data.choices?.[0]?.message?.content?.trim() || null;
-  } catch (err) {
-    console.error(`[AI Error] ${err.message}`);
-    return null;
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 2000));
   }
+  return null;
 }
 
 /** Check if a phone is opted out, ignoring formatting differences. */
@@ -496,6 +510,10 @@ View: ${DASHBOARD_URL || 'https://norcal-sms-agent.fly.dev'}/#conv-${convId}`;
         }
       }
 
+    }
+
+    if (!replyText) {
+      console.error(`[NoReply] ${fromPhone} AI produced no reply; inbound saved, nothing sent. Replay later.`);
     }
 
     if (replyText) {
