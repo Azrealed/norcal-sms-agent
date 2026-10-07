@@ -331,7 +331,7 @@ async function handleInboundWebhook(req, res) {
   }
 
   if (plan.optOut) {
-    db.prepare('INSERT OR IGNORE INTO opt_outs (phone, reason) VALUES (?, ?)').run(toE164(fromPhone) || fromPhone, 'keyword_stop');
+    db.prepare('INSERT OR IGNORE INTO opt_outs (phone, reason) VALUES (?, ?)').run(toE164(fromPhone) || fromPhone, plan.reason === 'wrong_number' ? 'wrong_number' : 'keyword_stop');
     console.log(`[OptOut] ${fromPhone} opted out. No reply will be sent.`);
   }
   if (plan.clearOptOut) {
@@ -379,6 +379,7 @@ async function handleInboundWebhook(req, res) {
   if (!plan.send) {
     if (plan.reason === 'test_mode') console.log(`[TestMode] stored inbound from ${fromPhone}; AI reply skipped`);
     if (plan.reason === 'suppressed') console.log(`[Suppressed] stored inbound from ${fromPhone}; no text will be sent`);
+    if (plan.reason === 'wrong_number') console.log(`[WrongNumber] ${fromPhone} marked do-not-text; no reply sent`);
     return res.json({ handled: true, conversation_id: convId, reply: null, reason: plan.reason });
   }
 
