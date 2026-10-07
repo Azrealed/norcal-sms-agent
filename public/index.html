@@ -2,333 +2,443 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NorCal SMS Agent</title>
-  <!--AUTH_STATE-->
+  <meta name="app-version" content="2"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <title>NorCal SMS Agent v2</title>
   <style>
+    /* ── Theme Variables ── */
+    :root {
+      --bg: #0f172a; --bg2: #1e293b; --bg3: #334155; --border: #334155;
+      --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+      --accent: #22c55e; --accent2: #16a34a; --accent-bg: #22c55e15;
+      --hot: #f59e0b; --hot-bg: #f59e0b20;
+      --red: #ef4444; --red-bg: #ef444420;
+      --blue: #3b82f6; --blue-bg: #3b82f620;
+      --purple: #8b5cf6; --purple-bg: #8b5cf620;
+      --cyan: #06b6d4; --cyan-bg: #06b6d420;
+      --radius: 8px; --shadow: 0 2px 8px rgba(0,0,0,0.3);
+      --kpi1: #22c55e; --kpi2: #3b82f6; --kpi3: #f59e0b; --kpi4: #8b5cf6;
+    }
+    .theme-light {
+      --bg: #f8fafc; --bg2: #ffffff; --bg3: #e2e8f0; --border: #cbd5e1;
+      --text: #0f172a; --text2: #475569; --text3: #94a3b8;
+      --accent: #16a34a; --accent2: #15803d; --accent-bg: #f0fdf4;
+      --hot: #d97706; --hot-bg: #fffbeb;
+      --red: #dc2626; --red-bg: #fef2f2;
+      --blue: #2563eb; --blue-bg: #eff6ff;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .theme-green  { --accent: #22c55e; --accent2: #16a34a; --accent-bg: #22c55e15; --kpi1: #22c55e; }
+    .theme-blue   { --accent: #3b82f6; --accent2: #2563eb; --accent-bg: #3b82f620; --kpi1: #3b82f6; }
+    .theme-purple { --accent: #8b5cf6; --accent2: #7c3aed; --accent-bg: #8b5cf620; --kpi1: #8b5cf6; }
+    .theme-orange { --accent: #f97316; --accent2: #ea580c; --accent-bg: #f9731620; --kpi1: #f97316; }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; height: 100vh; overflow: hidden; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
     /* ── Sidebar ── */
-    .sidebar { width: 240px; background: #1e293b; border-right: 1px solid #334155; display: flex; flex-direction: column; flex-shrink: 0; }
-    .sidebar-header { padding: 1.25rem; border-bottom: 1px solid #334155; }
+    .sidebar { width: 240px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-header { padding: 1.25rem; border-bottom: 1px solid var(--border); }
     .sidebar-header h1 { font-size: 1.1rem; }
-    .sidebar-header p { font-size: .75rem; color: #64748b; margin-top: 2px; }
+    .sidebar-header p { font-size: .75rem; color: var(--text3); margin-top: 2px; }
     .sidebar-nav { flex: 1; padding: .75rem; }
-    .nav-item { display: flex; align-items: center; gap: .75rem; padding: .6rem .75rem; border-radius: 8px; cursor: pointer; font-size: .9rem; color: #94a3b8; margin-bottom: 2px; }
-    .nav-item:hover { background: #334155; color: #e2e8f0; }
-    .nav-item.active { background: #22c55e20; color: #22c55e; }
-    .nav-item .badge { margin-left: auto; background: #ef4444; color: #fff; font-size: .7rem; padding: 1px 7px; border-radius: 10px; }
-    .sidebar-footer { padding: .75rem; border-top: 1px solid #334155; font-size: .8rem; color: #64748b; }
+    .nav-item { display: flex; align-items: center; gap: .75rem; padding: .6rem .75rem; border-radius: var(--radius); cursor: pointer; font-size: .9rem; color: var(--text2); margin-bottom: 2px; text-decoration: none; }
+    .nav-item:hover { background: var(--bg3); color: var(--text); }
+    .nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+    .nav-item .badge { margin-left: auto; background: var(--red); color: #fff; font-size: .7rem; padding: 1px 7px; border-radius: 10px; }
+    .sidebar-footer { padding: .75rem; border-top: 1px solid var(--border); font-size: .8rem; color: var(--text3); }
 
     /* ── Main ── */
-    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-y: auto; }
 
     /* ── Top Bar ── */
-    .topbar { display: flex; align-items: center; gap: 1rem; padding: .75rem 1.25rem; background: #1e293b; border-bottom: 1px solid #334155; flex-shrink: 0; }
+    .topbar { display: flex; align-items: center; gap: 1rem; padding: .75rem 1.25rem; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
     .topbar h2 { font-size: 1rem; font-weight: 600; }
     .topbar .spacer { flex: 1; }
-    .toggle-label { font-size: .8rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; }
+    .theme-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: .2s; }
+    .theme-dot.dark { background: #0f172a; border-color: #334155; }
+    .theme-dot.light { background: #f8fafc; border-color: #cbd5e1; }
+    .theme-dot:hover { transform: scale(1.15); }
+    .theme-dot.active { border-color: var(--accent); }
+    .color-dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: .2s; }
+    .color-dot:hover { transform: scale(1.15); }
+    .color-dot.active { border-color: var(--text); }
+    .btn { padding: .4rem .9rem; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font-size: .8rem; }
+    .btn:hover { background: var(--bg3); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-sm { padding: .25rem .6rem; font-size: .75rem; }
+    .toggle-label { font-size: .8rem; color: var(--text2); display: flex; align-items: center; gap: 8px; }
     .toggle { width: 40px; height: 22px; background: #475569; border-radius: 11px; cursor: pointer; position: relative; transition: .2s; }
-    .toggle.on { background: #22c55e; }
+    .toggle.on { background: var(--accent); }
     .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: .2s; }
     .toggle.on::after { left: 20px; }
-    .btn { padding: .4rem .9rem; border-radius: 6px; border: 1px solid #334155; background: transparent; color: #e2e8f0; cursor: pointer; font-size: .8rem; }
-    .btn:hover { background: #334155; }
-    .btn-primary { background: #22c55e; border-color: #22c55e; color: #fff; }
-    .btn-primary:hover { background: #16a34a; }
-    .btn-danger { border-color: #ef4444; color: #ef4444; }
-    .btn-danger:hover { background: #ef444420; }
-    .btn-sm { padding: .25rem .6rem; font-size: .75rem; }
 
-    /* ── Content ── */
+    /* ── Dashboard ── */
+    .dash { flex: 1; overflow-y: auto; padding: 1.25rem; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 1.25rem; }
+    .kpi-card { background: var(--bg2); padding: 1rem 1.25rem; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); transition: .15s; }
+    .kpi-card[onclick] { cursor: pointer; }
+    .kpi-card[onclick]:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .kpi-card[onclick]:active { transform: translateY(0); }
+    .kpi-card .kpi-value { font-size: 1.8rem; font-weight: 700; }
+    .kpi-card .kpi-label { font-size: .75rem; color: var(--text3); margin-top: 2px; }
+    .kpi-card .kpi-sub { font-size: .7rem; color: var(--text2); margin-top: 4px; }
+    .kpi-card .kpi-icon { font-size: 1.5rem; float: right; opacity: .5; }
+
+    .dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+    .dash-card { background: var(--bg2); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+    .dash-card .card-header { padding: .75rem 1rem; border-bottom: 1px solid var(--border); font-size: .85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .dash-card .card-body { padding: .75rem 1rem; max-height: 360px; overflow-y: auto; }
+    .act-item { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--border); font-size: .8rem; }
+    .act-item:last-child { border-bottom: none; }
+    .act-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .85rem; flex-shrink: 0; }
+    .act-in { background: var(--blue-bg); color: var(--blue); }
+    .act-out { background: var(--accent-bg); color: var(--accent); }
+    .act-name { font-weight: 500; color: var(--text); }
+    .act-msg { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .act-time { font-size: .7rem; color: var(--text3); margin-left: auto; flex-shrink: 0; }
+    .stage-bar { display: flex; align-items: center; gap: 6px; padding: .35rem 0; }
+    .stage-name { width: 90px; font-size: .78rem; color: var(--text2); }
+    .stage-count { width: 32px; font-size: .78rem; font-weight: 600; text-align: right; }
+    .stage-fill { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+    .stage-fill-inner { height: 100%; border-radius: 4px; transition: .3s; }
+
+    /* ── Conversations Tab ── */
     .content { flex: 1; display: flex; overflow: hidden; }
-
-    /* ── Conversation List ── */
-    .conv-list { width: 320px; border-right: 1px solid #334155; display: flex; flex-direction: column; flex-shrink: 0; }
-    .conv-search { padding: .75rem; border-bottom: 1px solid #334155; }
-    .conv-search input { width: 100%; padding: .5rem .75rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: .8rem; }
-    .conv-search input:focus { outline: none; border-color: #22c55e; }
+    .hidden { display: none !important; }
+    .conv-list { width: 320px; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .conv-search { padding: .75rem; border-bottom: 1px solid var(--border); }
+    .conv-search input { width: 100%; padding: .5rem .75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: .8rem; }
+    .conv-search input:focus { outline: none; border-color: var(--accent); }
+    .conv-filters { display: flex; gap: 4px; padding: .5rem .75rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+    .filter-chip { padding: .2rem .55rem; border-radius: 16px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: .7rem; cursor: pointer; white-space: nowrap; transition: .15s; }
+    .filter-chip:hover { background: var(--bg3); }
+    .filter-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
     .conv-items { flex: 1; overflow-y: auto; }
-    .conv-item { padding: .75rem 1rem; border-bottom: 1px solid #1e293b; cursor: pointer; transition: .1s; }
-    .conv-item:hover { background: #1e293b80; }
-    .conv-item.active { background: #22c55e15; border-left: 3px solid #22c55e; }
+    .conv-item { padding: .75rem 1rem; border-bottom: 1px solid var(--bg); cursor: pointer; transition: .1s; }
+    .conv-item:hover { background: var(--bg3); opacity: .8; }
+    .conv-item.active { background: var(--accent-bg); border-left: 3px solid var(--accent); }
     .conv-item .ci-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .conv-item .ci-name { font-weight: 500; font-size: .85rem; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .conv-item .ci-time { font-size: .7rem; color: #64748b; }
-    .conv-item .ci-preview { font-size: .78rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .conv-item .ci-time { font-size: .7rem; color: var(--text3); }
+    .conv-item .ci-phone { font-size: .72rem; color: var(--text3); margin-top: 1px; }
+    .conv-item .ci-address { font-size: .72rem; color: var(--accent); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .conv-item .ci-preview { font-size: .78rem; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
     .conv-item .ci-meta { display: flex; gap: 6px; margin-top: 4px; align-items: center; }
-    .conv-item .badge-small { font-size: .65rem; padding: 1px 6px; border-radius: 8px; }
-    .badge-new { background: #22c55e20; color: #22c55e; }
-    .badge-hot { background: #f59e0b20; color: #f59e0b; }
-    .badge-ai { background: #3b82f620; color: #3b82f6; }
-    .badge-manual { background: #94a3b820; color: #94a3b8; }
-    .badge-unread { background: #ef4444; color: #fff; font-size: .7rem; padding: 1px 7px; border-radius: 10px; }
-
-    /* ── Conversation Detail ── */
-    
-    /* ── CRM Panel ── */
+    .badge-small { font-size: .65rem; padding: 1px 6px; border-radius: 8px; }
+    .badge-new { background: var(--accent-bg); color: var(--accent); }
+    .badge-hot { background: var(--hot-bg); color: var(--hot); }
+    .badge-ai { background: var(--blue-bg); color: var(--blue); }
+    .badge-manual { background: var(--bg3); color: var(--text2); }
+    .badge-unread { background: var(--red); color: #fff; font-size: .7rem; padding: 1px 7px; border-radius: 10px; }
     .conv-detail { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-    .detail-body { flex: 1; display: flex; overflow: hidden; }
-    .detail-main { flex: 3; display: flex; flex-direction: column; min-width: 0; }
-    .crm-panel { width: 300px; background: #1e293b; border-left: 1px solid #334155; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; }
-    .crm-panel .crm-section { padding: .8rem 1rem; border-bottom: 1px solid #334155; }
-    .crm-panel .crm-section h4 { font-size: .75rem; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
-    .crm-panel .crm-field { margin-bottom: 8px; }
-    .crm-panel .crm-field label { font-size: .7rem; color: #94a3b8; display: block; margin-bottom: 2px; }
-    .crm-panel .crm-field input, .crm-panel .crm-field select { width: 100%; padding: .35rem .5rem; background: #0f172a; border: 1px solid #334155; border-radius: 5px; color: #e2e8f0; font-size: .8rem; }
-    .crm-panel .crm-field input:focus, .crm-panel .crm-field select:focus { outline: none; border-color: #22c55e; }
-    .crm-panel .crm-field textarea { width: 100%; padding: .35rem .5rem; background: #0f172a; border: 1px solid #334155; border-radius: 5px; color: #e2e8f0; font-size: .8rem; resize: vertical; min-height: 60px; }
-    .crm-panel .crm-field textarea:focus { outline: none; border-color: #22c55e; }
-    .crm-panel .crm-saved { font-size: .7rem; color: #22c55e; margin-top: 2px; display: none; }
-    .crm-info-row { display: flex; justify-content: space-between; font-size: .78rem; padding: 2px 0; color: #cbd5e1; }
-    .crm-info-row .crm-label { color: #64748b; }
-
-    .detail-header { padding: .75rem 1.25rem; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .detail-header { padding: .75rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
     .detail-header .dh-info { flex: 1; min-width: 0; }
     .detail-header .dh-phone { font-size: 1rem; font-weight: 600; }
-    .detail-header .dh-name { font-size: .8rem; color: #94a3b8; }
+    .detail-header .dh-address { font-size: .8rem; color: var(--accent); margin-top: 1px; }
+    .detail-header .dh-name { font-size: .75rem; color: var(--text3); }
     .detail-header .dh-actions { display: flex; gap: 8px; align-items: center; }
-    .detail-header .dh-actions select { padding: .3rem .5rem; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: .75rem; }
+    .detail-header .dh-actions select { padding: .3rem .5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: .75rem; }
+    .conv-body { flex: 1; display: flex; overflow: hidden; }
     .messages-area { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 8px; }
     .msg { max-width: 75%; padding: .6rem 1rem; border-radius: 12px; font-size: .88rem; line-height: 1.4; word-wrap: break-word; }
-    .msg.inbound { align-self: flex-start; background: #334155; }
-    .msg.outbound { align-self: flex-end; background: #22c55e20; border: 1px solid #22c55e40; }
-    .msg .msg-time { font-size: .65rem; color: #64748b; margin-top: 4px; }
-    .msg .msg-status { font-size: .65rem; color: #64748b; margin-left: 4px; }
-    .reply-area { padding: .75rem 1.25rem; border-top: 1px solid #334155; display: flex; gap: 8px; }
-    .reply-area textarea { flex: 1; padding: .6rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: .85rem; resize: none; min-height: 42px; max-height: 120px; }
-    .reply-area textarea:focus { outline: none; border-color: #22c55e; }
+    .msg.inbound { align-self: flex-start; background: var(--bg3); }
+    .msg.outbound { align-self: flex-end; background: var(--accent-bg); border: 1px solid var(--accent); }
+    .msg .msg-time { font-size: .65rem; color: var(--text3); margin-top: 4px; }
+    .back-btn { display: none; padding: .3rem .6rem; font-size: .8rem; background: transparent; border: 1px solid var(--border); color: var(--text); border-radius: 6px; cursor: pointer; margin-right: .5rem; align-items: center; gap: 4px; }
+    .reply-area { padding: .75rem 1.25rem; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+    .reply-area textarea { flex: 1; padding: .6rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: .85rem; resize: none; min-height: 42px; max-height: 120px; }
+    .reply-area textarea:focus { outline: none; border-color: var(--accent); }
     .reply-area button { align-self: flex-end; }
 
-    /* ── Knowledge Base / Settings Panels ── */
+    /* ── CRM Panel ── */
+    .crm-panel { width: 280px; border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; padding: 1rem; gap: .75rem; }
+    .crm-panel h4 { font-size: .8rem; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+    .crm-field { margin-bottom: 2px; }
+    .crm-field label { font-size: .7rem; color: var(--text3); display: block; margin-bottom: 2px; }
+    .crm-field input, .crm-field select { width: 100%; padding: .4rem .5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: .8rem; }
+    .crm-field input:focus, .crm-field select:focus { outline: none; border-color: var(--accent); }
+    .crm-field textarea { width: 100%; padding: .4rem .5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: .8rem; resize: vertical; min-height: 80px; }
+    .crm-field textarea:focus { outline: none; border-color: var(--accent); }
+    .crm-saved { font-size: .65rem; color: var(--accent); margin-top: 2px; display: none; }
+    .crm-toggle { display: none; padding: .25rem .5rem; font-size: .7rem; background: var(--bg2); border: 1px solid var(--border); color: var(--text2); border-radius: 6px; cursor: pointer; }
+
+    /* ── Panels ── */
     .panel { flex: 1; padding: 1.25rem; overflow-y: auto; }
     .panel h3 { font-size: 1rem; margin-bottom: 1rem; }
-    .kb-item { background: #1e293b; padding: .75rem 1rem; border-radius: 8px; margin-bottom: 8px; }
+    .kb-item { background: var(--bg2); padding: .75rem 1rem; border-radius: var(--radius); margin-bottom: 8px; }
     .kb-item .kb-q { font-weight: 500; font-size: .85rem; margin-bottom: 4px; }
-    .kb-item .kb-a { font-size: .8rem; color: #94a3b8; }
+    .kb-item .kb-a { font-size: .8rem; color: var(--text2); }
     .kb-item .kb-actions { display: flex; gap: 6px; margin-top: 6px; }
-    .kb-form { background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-    .kb-form input, .kb-form textarea { width: 100%; padding: .5rem; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-size: .8rem; margin-bottom: 8px; }
+    .kb-form { background: var(--bg2); padding: 1rem; border-radius: var(--radius); margin-bottom: 1rem; }
+    .kb-form input, .kb-form textarea { width: 100%; padding: .5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: .8rem; margin-bottom: 8px; }
     .kb-form textarea { min-height: 60px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 2rem; }
-    .stat-card { background: #1e293b; padding: 1rem; border-radius: 8px; text-align: center; }
-    .stat-card .stat-value { font-size: 1.8rem; font-weight: 700; color: #22c55e; }
-    .stat-card .stat-label { font-size: .75rem; color: #94a3b8; margin-top: 4px; }
-    .empty { text-align: center; color: #64748b; padding: 2rem; }
-    .hidden { display: none !important; }
-  
-  /* ── Mobile Responsive ── */
-  @media (max-width: 900px) {
-    .sidebar { display: none; }
-    .conv-list { width: 100%; border-right: none; }
-    .detail-body { flex-direction: column; }
-    .crm-panel { width: 100%; border-left: none; border-top: 1px solid #334155; max-height: 50vh; }
-    .conv-detail { width: 100%; display: none; }
-    .conv-detail.show { display: flex; }
-    .conv-list.hide { display: none; }
-    .detail-header { flex-wrap: wrap; }
-    .detail-header .dh-actions { width: 100%; justify-content: flex-start; }
-  }
+    .empty { text-align: center; color: var(--text3); padding: 2rem; }
 
-  @media (max-width: 480px) {
-    body { font-size: 14px; }
-    .conv-item { padding: .6rem .75rem; }
-    .conv-search input { font-size: 16px; }
-    .crm-panel { max-height: 40vh; }
-    .detail-header { padding: .5rem .75rem; }
-    .detail-header .dh-phone { font-size: .9rem; }
-    .messages-area { padding: .6rem .75rem; }
-    .msg { max-width: 85%; font-size: .85rem; }
-    .reply-area { padding: .5rem .75rem; }
-    .reply-area textarea { font-size: 16px; }
-    .crm-panel .crm-section { padding: .6rem .75rem; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .stat-card .stat-value { font-size: 1.4rem; }
-    .topbar { padding: .5rem .75rem; }
-    .topbar h2 { font-size: .9rem; }
-    .crm-panel .crm-field input, .crm-panel .crm-field select { font-size: 16px; }
-  }
+    /* ── Sidebar Toggle (Mobile) ── */
+    .sidebar-toggle { display: none; position: fixed; top: 10px; left: 10px; z-index: 500; width: 36px; height: 36px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 1.2rem; cursor: pointer; align-items: center; justify-content: center; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 400; }
 
-  /* Mobile nav bar */
-  .mobile-bar { display: none; }
-  @media (max-width: 900px) {
-    .mobile-bar { display: flex; align-items: center; gap: .5rem; padding: .5rem .75rem; background: #1e293b; border-bottom: 1px solid #334155; }
-    .mobile-bar .hamburger { font-size: 1.2rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; color: #94a3b8; }
-    .mobile-bar .hamburger:hover { background: #334155; color: #e2e8f0; }
-    .mobile-bar .mobile-title { font-size: .9rem; font-weight: 600; flex: 1; }
-    .mobile-bar .mobile-back { display: none; font-size: .85rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; color: #22c55e; }
-    .mobile-bar .mobile-back:hover { background: #22c55e20; }
-    .mobile-bar .mobile-back.show { display: block; }
-    .mobile-bar .mobile-badge { background: #ef4444; color: #fff; font-size: .7rem; padding: 1px 7px; border-radius: 10px; }
-  }
+    /* ── Mobile: Universal fixes ── */
+    @media (max-width: 768px) {
+      body { flex-direction: column; -webkit-overflow-scrolling: touch; overscroll-behavior: none; }
+      .sidebar-toggle { display: flex; position: fixed; top: 12px; left: 12px; z-index: 500; width: 36px; height: 36px; font-size: 1.1rem; }
+      .sidebar { position: fixed; top: 0; left: -280px; bottom: 0; z-index: 450; width: 280px; transition: left 0.25s ease; box-shadow: 4px 0 30px rgba(0,0,0,0.6); padding-top: env(safe-area-inset-top); }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .sidebar-nav .nav-item { padding: .75rem; font-size: .95rem; min-height: 44px; }
+      .sidebar-header { padding-top: calc(1.25rem + env(safe-area-inset-top)); }
+      .topbar { padding: .5rem .75rem .5rem 54px; gap: .5rem; min-height: 50px; align-items: center; }
+      .topbar h2 { font-size: .9rem; }
 
-  /* Mobile sidebar overlay */
-  .sidebar-overlay { display: none; }
-  @media (max-width: 900px) {
-    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; }
-    .sidebar-overlay.show { display: block; }
-    .sidebar-overlay .sidebar { display: flex; position: fixed; left: 0; top: 0; bottom: 0; z-index: 101; animation: slideIn 0.2s ease; }
-    @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-  }
+      /* Dashboard mobile */
+      .dash { padding: .75rem; padding-bottom: calc(.75rem + env(safe-area-inset-bottom)); }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .kpi-card { padding: .75rem .85rem; position: relative; }
+      .kpi-card .kpi-value { font-size: 1.4rem; }
+      .kpi-card .kpi-label { font-size: .7rem; }
+      .kpi-card .kpi-sub { font-size: .65rem; }
+      .kpi-card .kpi-icon { font-size: 1.2rem; position: absolute; top: .6rem; right: .6rem; }
+      .dash-grid { grid-template-columns: 1fr; gap: 8px; }
+      .card-header { font-size: .8rem; padding: .6rem .75rem; }
+      .card-body { padding: .5rem .75rem; max-height: 300px; }
+      .act-item { gap: .5rem; padding: .45rem 0; font-size: .78rem; }
+      .act-icon { width: 28px; height: 28px; font-size: .75rem; }
+      .act-msg { max-width: 140px; font-size: .75rem; }
+      .act-time { font-size: .65rem; }
+      .stage-name { width: 75px; font-size: .72rem; }
+      .stage-count { font-size: .72rem; }
 
-      @keyframes spin { to { transform: rotate(360deg); } }
+      /* Conversations mobile */
+      .conv-list { width: 100% !important; border-right: none; padding-top: 56px; }
+      .conv-search { position: fixed; top: 12px; left: 56px; right: 12px; z-index: 501; padding: 0; border-bottom: none; margin-left: 4px; }
+      .conv-search input { background: var(--bg2); border-radius: var(--radius); }
+      .conv-item { padding: .7rem .85rem; min-height: 44px; }
+      .conv-item .ci-name { font-size: .85rem; max-width: 160px; }
+      .conv-search input { font-size: 16px !important; padding: .55rem .75rem; }
+      .conv-detail { display: none; }
+      .conv-detail.active { display: flex; position: fixed; inset: 0; top: 0; z-index: 502; background: var(--bg); padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+      .detail-header { padding: .5rem .6rem; flex-wrap: wrap; gap: .35rem; }
+      .detail-header .dh-info { flex: 1 1 auto; min-width: 120px; }
+      .detail-header .dh-phone { font-size: .85rem; }
+      .detail-header .dh-actions { gap: 4px; flex-wrap: wrap; width: auto; }
+      .detail-header .dh-actions .btn, .detail-header .dh-actions select { font-size: .7rem; padding: .25rem .4rem; min-height: 32px; }
+      .detail-header .dh-actions .toggle-label { font-size: .7rem; gap: 4px; }
+      .detail-header .dh-actions .toggle { width: 34px; height: 20px; border-radius: 10px; }
+      .detail-header .dh-actions .toggle::after { width: 16px; height: 16px; }
+      .messages-area { padding: .75rem; }
+      .msg { max-width: 85%; font-size: .85rem; padding: .55rem .8rem; }
+      .msg .msg-time { font-size: .62rem; }
+      .reply-area { padding: .5rem .6rem; gap: 6px; padding-bottom: calc(.75rem + env(safe-area-inset-bottom)); }
+      .reply-area textarea { font-size: 16px !important; padding: .5rem; min-height: 40px; }
+      .reply-area button { min-height: 40px; min-width: 44px; padding: .4rem .7rem; font-size: .85rem; flex-shrink: 0; }
+      .back-btn { display: inline-flex !important; min-height: 32px; min-width: 32px; padding: .25rem .4rem; align-items: center; justify-content: center; font-size: .75rem; flex-shrink: 0; }
+
+      /* Panel mobile */
+      .panel { padding: .75rem; }
+      .kb-form input, .kb-form textarea { font-size: 16px !important; padding: .55rem; }
+      .kb-form button, .btn { min-height: 44px; }
+      .btn-sm { min-height: 36px; }
+    }
+
+    /* CRM panel stacking */
+    @media (max-width: 900px) {
+      .crm-toggle { display: inline-flex; align-items: center; gap: 3px; min-height: 32px; padding: .25rem .4rem; font-size: .65rem; }
+      .crm-panel { display: none; width: 100% !important; border-left: none; border-top: 1px solid var(--border); }
+      .crm-panel.open { display: flex; }
+      .conv-body { flex-direction: column; }
+      .crm-field input, .crm-field select, .crm-field textarea { font-size: 16px !important; padding: .5rem; }
+    }
+
+    /* Small phones */
+    @media (max-width: 480px) {
+      .topbar h2 { font-size: .82rem; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .kpi-card .kpi-value { font-size: 1.3rem; }
+      .act-msg { max-width: 110px; }
+      .conv-item { padding: .5rem .7rem; }
+      .conv-item .ci-name { font-size: .8rem; max-width: 130px; }
+      .detail-header { padding: .4rem .5rem; gap: .25rem; }
+      .detail-header .dh-actions { flex-wrap: wrap; gap: 3px; width: 100%; }
+      .detail-header .dh-actions .btn, .detail-header .dh-actions select { font-size: .65rem; padding: .2rem .35rem; min-height: 28px; }
+      .detail-header .dh-actions .toggle-label { font-size: .65rem; gap: 3px; }
+      .detail-header .dh-actions .toggle { width: 30px; height: 18px; border-radius: 9px; }
+      .detail-header .dh-actions .toggle::after { width: 14px; height: 14px; }
+      .detail-header .dh-phone { font-size: .8rem; }
+      .detail-header .dh-name { font-size: .65rem; }
+      .detail-header .dh-address { font-size: .65rem; }
+      .back-btn { min-height: 28px; min-width: 28px; padding: .2rem .35rem; font-size: .7rem; }
+      .crm-toggle { min-height: 28px; padding: .2rem .35rem; font-size: .62rem; }
+      .reply-area { padding: .4rem .5rem; padding-bottom: calc(.75rem + env(safe-area-inset-bottom)); }
+      .reply-area textarea { min-height: 36px; padding: .4rem; }
+      .reply-area button { min-height: 36px; min-width: 40px; padding: .3rem .6rem; font-size: .8rem; }
+    }
+
+    /* Touch-friendly tweaks */
+    @media (hover: none) and (pointer: coarse) {
+      .btn, .nav-item, .conv-item, .toggle, select, .back-btn, .crm-toggle, .theme-dot, .color-dot {
+        cursor: default;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .nav-item:active, .conv-item:active, .btn:active { opacity: .7; }
+    }
+
+    /* iPhone notch safe areas */
+    @supports (padding-top: env(safe-area-inset-top)) {
+      .sidebar { padding-top: env(safe-area-inset-top); }
+      .main { padding-top: 0; }
+    }
   </style>
 </head>
 <body>
   <!-- Sidebar -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <h1>📋 NorCal SMS Agent</h1>
       <p>AI-powered lead engagement</p>
     </div>
     <div class="sidebar-nav">
-      <div class="nav-item active" data-tab="conversations" onclick="switchTab('conversations')">💬 Conversations <span class="badge" id="unread-badge">0</span></div>
+      <div class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</div>
+      <div class="nav-item" data-tab="conversations" onclick="switchTab('conversations')">💬 Conversations <span class="badge" id="unread-badge">0</span></div>
       <div class="nav-item" data-tab="knowledge" onclick="switchTab('knowledge')">📚 Knowledge Base</div>
       <div class="nav-item" data-tab="settings" onclick="switchTab('settings')">⚙️ Settings</div>
       <div class="nav-item" data-tab="optouts" onclick="switchTab('optouts')">🚫 Opt-Outs</div>
+      <div class="nav-item" data-tab="skiptrace" onclick="switchTab('skiptrace')">🔍 Skip Trace</div>
+      <div class="nav-item" onclick="openNewConversation()" style="color: var(--accent)">✏️ New Message</div>
+      <a href="/leads" class="nav-item">📋 Lead Pipeline</a>
+      <a href="/sequence" class="nav-item">🗺️ Sequence Map</a>
     </div>
-    <div class="sidebar-footer" style="padding: .75rem; border-top: 1px solid #334155;">
-      <div style="font-size:.75rem;color:#64748b;" id="footer-stats"></div>
-    </div>
-    <div class="sidebar-footer">
-      <a href="/login" onclick="event.preventDefault();logout()" style="color:#ef4444;text-decoration:none;font-size:.8rem;">Sign Out</a>
-    </div>
-    </div>
-
-  <!-- Mobile Sidebar Overlay -->
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="hideMobileSidebar()">
-    <div class="sidebar" onclick="event.stopPropagation()">
-      <div class="sidebar-header">
-        <h1>📋 NorCal SMS Agent</h1>
-        <p>AI-powered lead engagement</p>
-      </div>
-      <div class="sidebar-nav">
-        <div class="nav-item active" data-tab="conversations" onclick="switchTab('conversations'); hideMobileSidebar()">💬 Conversations <span class="badge" id="unread-badge-mobile">0</span></div>
-        <div class="nav-item" data-tab="knowledge" onclick="switchTab('knowledge'); hideMobileSidebar()">📚 Knowledge Base</div>
-        <div class="nav-item" data-tab="settings" onclick="switchTab('settings'); hideMobileSidebar()">⚙️ Settings</div>
-        <div class="nav-item" data-tab="optouts" onclick="switchTab('optouts'); hideMobileSidebar()">🚫 Opt-Outs</div>
-      </div>
-      <div class="sidebar-footer">
-        <div style="font-size:.75rem;color:#64748b;padding:0 .75rem .5rem;" id="footer-stats-mobile"></div>
-        <a href="/login" onclick="event.preventDefault();logout()" style="color:#ef4444;text-decoration:none;font-size:.8rem;display:block;padding:.75rem;">Sign Out</a>
-      </div>
-    </div>
+    <div class="sidebar-footer"><div style="font-size:.75rem;color:var(--text3)" id="footer-stats"></div></div>
+    <div class="sidebar-footer"><a href="#" onclick="logout()" style="color:var(--red);text-decoration:none;font-size:.8rem;">Sign Out</a></div>
   </div>
 
-  <!-- Mobile Top Bar -->
-  <div class="mobile-bar">
-    <span class="hamburger" onclick="showMobileSidebar()">☰</span>
-    <span class="mobile-title">NorCal SMS Agent</span>
-    <span class="mobile-badge" id="mobile-badge">0</span>
-    <span class="mobile-back" id="mobile-back" onclick="showConversationList()">← Back</span>
-  </div>
+  <!-- Mobile sidebar toggle -->
+  <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
   <!-- Main -->
   <div class="main">
-    <!-- Tab: Conversations -->
-    <div id="tab-conversations" class="content">
+    <!-- ─── DASHBOARD ─── -->
+    <div id="tab-dashboard" class="dash">
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="dash-grid">
+        <div class="dash-card"><div class="card-header">🕐 Recent Activity</div><div class="card-body" id="recent-activity"><div class="empty">Loading...</div></div></div>
+        <div>
+          <div class="dash-card" style="margin-bottom:12px"><div class="card-header">📊 Lead Stages</div><div class="card-body" id="stage-breakdown"><div class="empty">Loading...</div></div></div>
+          <div class="dash-card"><div class="card-header">🏷️ Labels</div><div class="card-body" id="label-breakdown"><div class="empty">Loading...</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── CONVERSATIONS ─── -->
+    <div id="tab-conversations" class="content hidden">
       <div class="conv-list">
         <div class="conv-search"><input type="text" placeholder="Search phone, name, or address..." id="conv-search" oninput="loadConversations()"></div>
-        <div class="conv-items" id="conv-items"><div class="empty" id="conv-loading">Loading... <div class="spinner" style="margin:8px auto;width:20px;height:20px;border:2px solid #334155;border-top:2px solid #22c55e;border-radius:50%;animation:spin 1s linear infinite;"></div></div></div>
+        <div class="conv-filters" id="conv-filters">
+          <button class="filter-chip active" data-filter="all" onclick="setConvFilter('all', this)">All</button>
+          <button class="filter-chip" data-filter="hot" onclick="setConvFilter('hot', this)">🔥 Hot</button>
+          <button class="filter-chip" data-filter="warm" onclick="setConvFilter('warm', this)">Warm</button>
+          <button class="filter-chip" data-filter="cold" onclick="setConvFilter('cold', this)">Cold</button>
+          <button class="filter-chip" data-filter="new" onclick="setConvFilter('new', this)">🆕 New</button>
+          <button class="filter-chip" data-filter="today" onclick="setConvFilter('today', this)">📅 Today</button>
+          <button class="filter-chip" data-filter="unread" onclick="setConvFilter('unread', this)">📬 Unread</button>
+          <button class="filter-chip" data-filter="replied" onclick="setConvFilter('replied', this)">↩️ Replied</button>
+          <button class="filter-chip" data-filter="noreply" onclick="setConvFilter('noreply', this)">📭 No Reply</button>
+          <select id="conv-stage-filter" onchange="setConvFilter('stage', this)" style="padding:.25rem .4rem;background:var(--bg);border:1px solid var(--border);border-radius:16px;color:var(--text2);font-size:.7rem;cursor:pointer;margin-left:auto;">
+            <option value="">🏗️ Stage</option>
+            <option value="new">New</option><option value="contacted">Contacted</option><option value="negotiating">Negotiating</option>
+            <option value="contract">Contract</option><option value="closed">Closed</option><option value="dead">Dead</option>
+          </select>
+        </div>
+        <div class="conv-items" id="conv-items"><div class="empty">Loading...</div></div>
       </div>
       <div class="conv-detail" id="detail-panel">
         <div class="detail-header" id="detail-header">
+          <button class="back-btn" id="backBtn" onclick="closeMobileChat()">← Back</button>
           <div class="dh-info">
             <div class="dh-phone" id="detail-phone">Select a conversation</div>
+            <div class="dh-address" id="detail-address" style="display:none;"></div>
             <div class="dh-name" id="detail-name"></div>
           </div>
           <div class="dh-actions" id="detail-actions" style="display:none;">
+            <button class="btn btn-sm" id="push-crm-btn" onclick="pushToCRM()" title="Push to Go High Level" style="display:none; background:#22c55e; color:#fff; border-color:#22c55e;">📤 Push to CRM</button>
+            <button class="crm-toggle" id="crm-toggle-btn" onclick="toggleCrmPanel()">📋 Info</button>
             <div class="toggle-label">AI <div class="toggle" id="ai-toggle" onclick="toggleConversationAI()"></div> Manual</div>
             <select id="label-select" onchange="updateConversationField('label', this.value)" style="display:none;">
-              <option value="new">New</option>
-              <option value="hot">🔥 Hot</option>
-              <option value="warm">Warm</option>
-              <option value="cold">Cold</option>
-              <option value="archived">Archived</option>
+              <option value="new">New</option><option value="hot">🔥 Hot</option><option value="warm">Warm</option>
+              <option value="cold">Cold</option><option value="archived">Archived</option>
             </select>
           </div>
         </div>
-        <div class="detail-body">
-          <div class="detail-main">
-            <div class="messages-area" id="messages-area"><div class="empty">Select a conversation to view messages</div></div>
-            <div class="reply-area" id="reply-area" style="display:none;">
-              <textarea id="reply-input" placeholder="Type a reply..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
-              <button class="btn btn-primary btn-sm" onclick="sendReply()">Send</button>
+        <div class="conv-body">
+          <div class="messages-area" id="messages-area"><div class="empty">Select a conversation to view messages</div></div>
+          <div class="crm-panel" id="crm-panel">
+            <h4>📋 Lead Info</h4>
+            <div class="crm-field"><label>Lead Stage</label>
+              <select id="crm-stage" onchange="saveCrmField('lead_stage', this.value)">
+                <option value="new">New</option><option value="contacted">Contacted</option>
+                <option value="negotiating">Negotiating</option><option value="contract">Contract</option>
+                <option value="closed">Closed</option><option value="dead">Dead</option>
+              </select></div>
+            <div class="crm-field"><label>Property Address</label><input type="text" id="crm-address" placeholder="123 Main St, Redding, CA" onblur="saveCrmField('lead_address', this.value)"></div>
+            <div class="crm-field"><label>Asking Price</label><input type="number" id="crm-price" placeholder="0" onblur="saveCrmField('lead_asking_price', this.value)"></div>
+            <div class="crm-field"><label>Condition</label>
+              <select id="crm-condition" onchange="saveCrmField('lead_condition', this.value)">
+                <option value="">—</option><option value="excellent">Excellent</option><option value="good">Good</option>
+                <option value="fair">Fair</option><option value="poor">Poor</option><option value="teardown">Teardown</option>
+              </select></div>
+            <div class="crm-field"><label>Motivation</label>
+              <select id="crm-motivation" onchange="saveCrmField('lead_motivation', this.value)">
+                <option value="">—</option>
+                <option value="Moving/Relocating">🚚 Moving/Relocating</option>
+                <option value="Divorce">💔 Divorce</option>
+                <option value="Foreclosure/Distress">⚠️ Foreclosure/Distress</option>
+                <option value="Inherited/Probate">📜 Inherited/Probate</option>
+                <option value="Downsizing">🏠 Downsizing</option>
+                <option value="Tired Landlord">😩 Tired Landlord</option>
+                <option value="Financial Need">💰 Financial Need</option>
+                <option value="Needs Repairs">🔧 Needs Repairs</option>
+                <option value="Job Relocation">💼 Job Relocation</option>
+                <option value="Motivated — Quick Sale">⚡ Motivated — Quick Sale</option>
+              </select></div>
+            <div class="crm-field"><label>Lead Source</label><input type="text" id="crm-source" placeholder="e.g. Zillow, FB, Cold Call" onblur="saveCrmField('lead_source', this.value)"></div>
+            <div style="background:var(--bg);padding:.5rem;border-radius:6px;margin:.25rem 0;">
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button class="btn btn-sm btn-primary" onclick="pullComps()" id="comps-btn" style="flex:1">📊 Pull Comps & ARV</button>
+              </div>
+              <div id="comps-result" style="margin-top:4px;display:none;">
+                <div style="font-size:.7rem;color:var(--text3);margin-bottom:2px;">After-Repair Value (ARV)</div>
+                <div style="font-size:1.1rem;font-weight:700;color:var(--accent)" id="arv-value">—</div>
+                <div style="font-size:.7rem;color:var(--text3);margin-top:4px;">Max Allowable Offer (MAO)</div>
+                <div style="font-size:.9rem;font-weight:600;color:var(--hot)" id="mao-value">—</div>
+                <div style="font-size:.65rem;color:var(--text3);margin-top:2px;" id="arv-formula"></div>
+              </div>
+            </div>
+            <div class="crm-field">
+              <label>Notes <span style="font-size:.65rem;color:var(--text3)">(timestamped)</span></label>
+              <div style="display:flex;gap:4px;">
+                <input type="text" id="crm-note-input" placeholder="Add a note..." style="flex:1" onkeydown="if(event.key==='Enter')addNote()">
+                <button class="btn btn-sm btn-primary" onclick="addNote()" style="flex-shrink:0">+</button>
+              </div>
+              <div id="crm-notes-list" style="margin-top:6px;max-height:200px;overflow-y:auto;"></div>
             </div>
           </div>
-          <div class="crm-panel" id="crm-panel" style="display:none;">
-            <div class="crm-section">
-              <h4>Contact Info</h4>
-              <div class="crm-field">
-                <label>Name</label>
-                <input type="text" id="crm-name" placeholder="Contact name" onchange="crmAutoSave('contact_name', this.value)">
-                <div class="crm-saved" id="crm-saved-name">✓ Saved</div>
-              </div>
-              <div class="crm-field">
-                <label>Phone</label>
-                <input type="text" id="crm-phone" readonly style="opacity:.7;">
-              </div>
-            </div>
-            <div class="crm-section">
-              <h4>Property</h4>
-              <div class="crm-field">
-                <label>Address</label>
-                <input type="text" id="crm-address" placeholder="123 Main St, City, CA" onchange="crmAutoSave('property_address', this.value)">
-                <div class="crm-saved" id="crm-saved-address">✓ Saved</div>
-              </div>
-              <div class="crm-field">
-                <label>Lead Source</label>
-                <select id="crm-source" onchange="crmAutoSave('lead_source', this.value)">
-                  <option value="">- Select -</option>
-                  <option value="sms-blast">Cold SMS Blast</option>
-                  <option value="property-radar">PropertyRadar</option>
-                  <option value="facebook-ad">Facebook Ad</option>
-                  <option value="google-ad">Google Ad</option>
-                  <option value="d4d">D4D</option>
-                  <option value="resimpli">Resimpli</option>
-                  <option value="caller">Cold Caller</option>
-                  <option value="referral">Referral</option>
-                  <option value="other">Other</option>
-                </select>
-                <div class="crm-saved" id="crm-saved-source">✓ Saved</div>
-              </div>
-            </div>
-            <div class="crm-section">
-              <h4>Status</h4>
-              <div class="crm-field">
-                <label>Lead Status</label>
-                <select id="crm-status" onchange="crmAutoSave('status', this.value)">
-                  <option value="active">Active</option>
-                  <option value="negotiating">Negotiating</option>
-                  <option value="deal">Deal 🔥</option>
-                  <option value="lost">Lost</option>
-                  <option value="dead">Dead</option>
-                  <option value="archived">Archived</option>
-                </select>
-                <div class="crm-saved" id="crm-saved-status">✓ Saved</div>
-              </div>
-              <div class="crm-info-row"><span class="crm-label">Label</span><span id="crm-label-display">New</span></div>
-              <div class="crm-info-row"><span class="crm-label">AI Auto-Reply</span><span id="crm-ai-display">Enabled</span></div>
-              <div class="crm-info-row"><span class="crm-label">Created</span><span id="crm-created"></span></div>
-            </div>
-            <div class="crm-section" style="flex:1;">
-              <h4>Notes</h4>
-              <div class="crm-field" style="flex:1;">
-                <textarea id="crm-notes" placeholder="Add internal notes about this lead..." style="min-height:100px;" onchange="crmAutoSave('notes', this.value)"></textarea>
-                <div class="crm-saved" id="crm-saved-notes">✓ Saved</div>
-              </div>
-            </div>
-          </div>
+        </div>
+        <div class="reply-area" id="reply-area" style="display:none;">
+          <textarea id="reply-input" placeholder="Type a reply..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
+          <button class="btn btn-primary btn-sm" onclick="sendReply()">Send</button>
         </div>
       </div>
     </div>
 
-    <!-- Tab: Knowledge Base -->
+    <!-- ─── KNOWLEDGE BASE ─── -->
     <div id="tab-knowledge" class="content hidden">
       <div class="panel">
         <h3>📚 Knowledge Base</h3>
-        <p style="font-size:.8rem;color:#94a3b8;margin-bottom:1rem;">These Q&A pairs teach the AI agent how to respond to leads. Add common questions homeowners ask.</p>
+        <p style="font-size:.8rem;color:var(--text2);margin-bottom:1rem;">These Q&A pairs teach the AI agent how to respond to leads.</p>
         <div class="kb-form">
           <input type="text" id="kb-question" placeholder="Question (e.g., What areas do you buy in?)">
           <textarea id="kb-answer" placeholder="Answer the AI should give..."></textarea>
@@ -339,110 +449,320 @@
       </div>
     </div>
 
-    <!-- Tab: Settings -->
+    <!-- ─── SETTINGS ─── -->
     <div id="tab-settings" class="content hidden">
       <div class="panel">
-        <h3>⚙️ Dashboard &amp; Settings</h3>
-        <div class="stats-grid" id="stats-grid"></div>
-        <div style="background:#1e293b;padding:1rem;border-radius:8px;">
+        <h3>⚙️ Settings & Themes</h3>
+        <div style="background:var(--bg2);padding:1rem;border-radius:var(--radius);margin-bottom:1rem;border:1px solid var(--border)">
+          <h4 style="margin-bottom:.5rem;font-size:.9rem;">🎨 Theme</h4>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+            <div class="theme-dot dark active" id="theme-dark" onclick="setTheme('dark')" title="Dark"></div>
+            <div class="theme-dot light" id="theme-light" onclick="setTheme('light')" title="Light"></div>
+          </div>
+          <h4 style="margin-bottom:.5rem;font-size:.9rem;">🎨 Accent Color</h4>
+          <div style="display:flex;gap:8px;">
+            <div class="color-dot active" id="color-green" style="background:#22c55e" onclick="setColor('green')" title="Green"></div>
+            <div class="color-dot" id="color-blue" style="background:#3b82f6" onclick="setColor('blue')" title="Blue"></div>
+            <div class="color-dot" id="color-purple" style="background:#8b5cf6" onclick="setColor('purple')" title="Purple"></div>
+            <div class="color-dot" id="color-orange" style="background:#f97316" onclick="setColor('orange')" title="Orange"></div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);padding:1rem;border-radius:var(--radius);margin-bottom:1rem;border:1px solid var(--border)">
           <h4 style="margin-bottom:.5rem;font-size:.9rem;">Global AI Toggle</h4>
-          <p style="font-size:.8rem;color:#94a3b8;margin-bottom:.75rem;">Turn AI auto-replies on or off for ALL conversations at once.</p>
+          <p style="font-size:.8rem;color:var(--text2);margin-bottom:.75rem;">Turn AI auto-replies on or off for ALL conversations.</p>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-primary btn-sm" onclick="globalAIToggle(true)">Enable AI for All</button>
             <button class="btn btn-sm" onclick="globalAIToggle(false)">Disable AI for All</button>
           </div>
         </div>
-        <div style="background:#1e293b;padding:1rem;border-radius:8px;margin-top:1rem;">
+        <div style="background:var(--bg2);padding:1rem;border-radius:var(--radius);border:1px solid var(--border)">
           <h4 style="margin-bottom:.5rem;font-size:.9rem;">Webhook URL</h4>
-          <p style="font-size:.8rem;color:#94a3b8;margin-bottom:.5rem;">Set this as your Inbound Webhook URL in smsblast.io:</p>
-          <code id="webhook-url" style="background:#0f172a;padding:.5rem;display:block;border-radius:6px;font-size:.8rem;word-break:break-all;"></code>
+          <p style="font-size:.8rem;color:var(--text2);margin-bottom:.5rem;">Set this in smsblast.io for inbound messages:</p>
+          <code id="webhook-url" style="background:var(--bg);padding:.5rem;display:block;border-radius:6px;font-size:.8rem;word-break:break-all;"></code>
         </div>
       </div>
     </div>
 
-    <!-- Tab: Opt-Outs -->
+    <!-- ─── OPT-OUTS ─── -->
     <div id="tab-optouts" class="content hidden">
       <div class="panel">
         <h3>🚫 Opted-Out Numbers</h3>
-        <p style="font-size:.8rem;color:#94a3b8;margin-bottom:1rem;">These numbers have unsubscribed and will not receive AI replies. You can remove them to re-enable.</p>
+        <p style="font-size:.8rem;color:var(--text2);margin-bottom:1rem;">These numbers have unsubscribed. Remove to re-enable.</p>
         <div id="optout-list"></div>
+      </div>
+    </div>
+
+    <!-- ─── SKIP TRACE ─── -->
+    <div id="tab-skiptrace" class="content hidden">
+      <div class="panel">
+        <h3>🔍 Skip Trace — Property Address → Phone Numbers</h3>
+        <p style="font-size:.8rem;color:var(--text2);margin-bottom:1rem;">
+          Paste property addresses (one per line) to find owner phone numbers.<br>
+          Uses BatchLeads / PropertyRadar API for premium results, TruePeopleSearch as fallback.
+        </p>
+
+        <!-- Quick upload + trace -->
+        <div style="background:var(--bg2);padding:1rem;border-radius:var(--radius);margin-bottom:1rem;border:1px solid var(--border);">
+          <h4 style="font-size:.85rem;margin-bottom:.5rem;">📋 Addresses (one per line)</h4>
+          <textarea id="skip-addresses" placeholder="123 Main St, Redding, CA 96001&#10;456 Oak Ave, Anderson, CA 96007&#10;789 Pine Rd, Shasta Lake, CA 96019" style="width:100%;padding:.6rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:.8rem;min-height:120px;resize:vertical;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:.5rem;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="startSkipTrace()">🔍 Skip Trace Addresses</button>
+            <span style="font-size:.75rem;color:var(--text3);">or</span>
+            <button class="btn" onclick="document.getElementById('skip-blast-section').style.display='block';this.style.display='none'">📋 Skip Trace + Blast</button>
+          </div>
+          <div id="skip-trace-status" style="margin-top:.75rem;display:none;">
+            <div id="skip-progress" style="height:6px;background:var(--accent);border-radius:3px;width:0;transition:width .3s;"></div>
+            <div id="skip-stats" style="font-size:.75rem;color:var(--text2);margin-top:4px;"></div>
+          </div>
+          <div id="skip-trace-results" style="margin-top:.75rem;"></div>
+        </div>
+
+        <!-- Skip Trace + Blast pipeline -->
+        <div id="skip-blast-section" style="background:var(--bg2);padding:1rem;border-radius:var(--radius);margin-bottom:1rem;border:1px solid var(--border);display:none;">
+          <h4 style="font-size:.85rem;margin-bottom:.5rem;">📨 Blast Message (after skip trace)</h4>
+          <textarea id="skip-blast-message" placeholder="Hey, I'm D — I buy houses in your area for cash. If you're interested in selling 123 Main St, reply to this text and let's chat!" style="width:100%;padding:.6rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:.8rem;min-height:80px;resize:vertical;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:.5rem;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:.75rem;color:var(--text2);">Delay:</label>
+            <input type="number" id="skip-blast-delay" value="300" min="100" max="5000" style="width:80px;padding:.3rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.75rem;">
+            <span style="font-size:.7rem;color:var(--text3);">ms</span>
+            <button class="btn btn-primary" onclick="startSkipTraceAndBlast()">🚀 Trace + Blast</button>
+          </div>
+          <div id="skip-blast-status" style="margin-top:.75rem;display:none;"></div>
+        </div>
+
+        <!-- Recent jobs -->
+        <div style="background:var(--bg2);padding:1rem;border-radius:var(--radius);border:1px solid var(--border);">
+          <h4 style="font-size:.85rem;margin-bottom:.5rem;">📜 Recent Skip Trace Jobs</h4>
+          <div id="skip-jobs-list"><div class="empty">No skip trace jobs yet</div></div>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
     // ── State ──
-    let currentTab = 'conversations';
+    let currentTab = 'dashboard';
     let conversations = [];
     let selectedConvId = null;
-    let kbItems = [];
+    const KPI_COLORS = ['var(--kpi1)', 'var(--kpi2)', 'var(--kpi3)', 'var(--kpi4)', 'var(--cyan)', 'var(--purple)'];
+
+    // ── Theme ──
+    function setTheme(t) {
+      document.body.classList.toggle('theme-light', t === 'light');
+      document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.id === 'theme-' + t));
+      localStorage.setItem('norcal-theme', t);
+    }
+    function setColor(c) {
+      document.body.classList.remove('theme-green','theme-blue','theme-purple','theme-orange');
+      if (c !== 'green') document.body.classList.add('theme-' + c);
+      document.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('active', d.id === 'color-' + c));
+      localStorage.setItem('norcal-color', c);
+    }
+    (function() {
+      const t = localStorage.getItem('norcal-theme');
+      if (t === 'light') setTheme('light');
+      const c = localStorage.getItem('norcal-color');
+      if (c && c !== 'green') setColor(c);
+    })();
+
+    // ── Mobile ──
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+    function closeMobileChat() {
+      document.getElementById('detail-panel').classList.remove('active');
+      document.getElementById('sidebarToggle').style.display = '';
+      var searchEl = document.getElementById('conv-search');
+      if (searchEl) searchEl.style.display = '';
+      var filtersEl = document.getElementById('conv-filters');
+      if (filtersEl) filtersEl.style.display = '';
+      selectedConvId = null;
+    }
+    function openConversation(convId) {
+      if (window.innerWidth <= 768) {
+        document.getElementById('detail-panel').classList.add('active');
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+        document.getElementById('sidebarToggle').style.display = 'none';
+        var searchEl = document.getElementById('conv-search');
+        if (searchEl) searchEl.style.display = 'none';
+        var filtersEl = document.getElementById('conv-filters');
+        if (filtersEl) filtersEl.style.display = 'none';
+      }
+      selectConversation(convId);
+    }
+    function toggleCrmPanel() {
+      document.getElementById('crm-panel').classList.toggle('open');
+    }
 
     // ── Init ──
     document.addEventListener('DOMContentLoaded', async () => {
-      console.log('App v1781049708942 booting...');
       const me = await fetch('/api/me').then(r => r.json());
       if (!me.authenticated) { window.location.href = '/login'; return; }
       setWebhookUrl();
-      loadConversations();
-      loadStats();
+      loadDashboard();
     });
 
     function setWebhookUrl() {
-      const url = window.location.origin + '/webhook/inbound';
-      document.getElementById('webhook-url').textContent = url;
+      document.getElementById('webhook-url').textContent = window.location.origin + '/webhook/inbound';
     }
 
     // ── Tab Switching ──
-    function switchTab(tab) {
+    async function switchTab(tab) {
       currentTab = tab;
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
-      document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
-      document.getElementById('tab-' + tab).classList.remove('hidden');
+      document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
+      document.querySelectorAll('#tab-dashboard, #tab-conversations, #tab-knowledge, #tab-settings, #tab-optouts, #tab-skiptrace').forEach(c => c.classList.add('hidden'));
+      const el = document.getElementById('tab-' + tab);
+      if (el) el.classList.remove('hidden');
+      if (tab === 'dashboard') loadDashboard();
+      if (tab === 'conversations') loadConversations();
       if (tab === 'knowledge') loadKnowledgeBase();
       if (tab === 'optouts') loadOptOuts();
-      if (tab === 'settings') loadStats();
+      if (tab === 'skiptrace') loadSkipTraceJobs();
+    }
+
+    // ── Dashboard ──
+    async function loadDashboard() {
+      const d = await fetch('/api/dashboard').then(r => r.json());
+
+      // KPIs — clickable to filter conversations
+      const kpis = [
+        { v: d.total_conversations, l: 'Total Leads', s: `${d.active_conversations} active`, i: '👥', c: 0, f: 'all' },
+        { v: d.hot_leads, l: '🔥 Hot Leads', s: `${d.deals_in_pipeline} in pipeline`, i: '🎯', c: 2, f: 'hot' },
+        { v: d.messages_today, l: 'Messages Today', s: `${d.today_inbound} in · ${d.today_outbound} out`, i: '💬', c: 1, f: 'today' },
+        { v: d.response_rate + '%', l: 'Response Rate', s: `${d.week_messages} msgs this week`, i: '📈', c: 3 },
+        { v: d.total_unread, l: 'Unread', s: `${d.ai_enabled} AI enabled`, i: '📬', c: 4, f: 'unread' },
+        { v: d.opt_outs, l: 'Opt-Outs', s: '', i: '🚫', c: 5 }
+      ];
+      document.getElementById('kpi-grid').innerHTML = kpis.map(k => {
+        const click = k.f ? `onclick="switchTab('conversations');setConvFilter('${k.f}');" style="cursor:pointer"` : '';
+        return `<div class="kpi-card" ${click}>
+        <div class="kpi-icon">${k.i}</div>
+        <div class="kpi-value" style="color:${KPI_COLORS[k.c]}">${k.v}</div>
+        <div class="kpi-label">${k.l}</div>
+        ${k.s ? `<div class="kpi-sub">${k.s}</div>` : ''}
+      </div>`; }).join('');
+
+      // Recent Activity
+      const actEl = document.getElementById('recent-activity');
+      if (!d.recent_activity || d.recent_activity.length === 0) {
+        actEl.innerHTML = '<div class="empty">No activity yet</div>';
+      } else {
+        actEl.innerHTML = d.recent_activity.map(m => {
+          const isIn = m.direction === 'inbound';
+          const name = m.contact_name || m.conv_phone;
+          const time = new Date(m.timestamp + 'Z').toLocaleString();
+          return `<div class="act-item">
+            <div class="act-icon ${isIn ? 'act-in' : 'act-out'}">${isIn ? '↓' : '↑'}</div>
+            <div><div class="act-name">${name}</div><div class="act-msg">${m.body}</div></div>
+            <div class="act-time">${time}</div>
+          </div>`;
+        }).join('');
+      }
+
+      // Stage breakdown
+      const stageColors = { 'new': 'var(--blue)', 'contacted': 'var(--cyan)', 'negotiating': 'var(--hot)', 'contract': 'var(--accent)', 'closed': 'var(--text3)', 'dead': 'var(--red)' };
+      const stages = d.stage_breakdown || [];
+      const maxStage = Math.max(1, ...stages.map(s => s.count));
+      document.getElementById('stage-breakdown').innerHTML = stages.length === 0
+        ? '<div class="empty">No leads yet</div>'
+        : stages.map(s => `<div class="stage-bar" onclick="switchTab('conversations');setConvFilterStage('${s.lead_stage || 'new'}')" style="cursor:pointer">
+            <span class="stage-name">${s.lead_stage || 'new'}</span>
+            <span class="stage-count">${s.count}</span>
+            <div class="stage-fill"><div class="stage-fill-inner" style="width:${(s.count/maxStage)*100}%;background:${stageColors[s.lead_stage]||'var(--accent)'}"></div></div>
+          </div>`).join('');
+
+      // Labels
+      const labelColors = { 'hot': 'var(--hot)', 'warm': 'var(--hot)', 'cold': 'var(--blue)', 'new': 'var(--accent)', 'archived': 'var(--text3)' };
+      const labels = d.label_breakdown || [];
+      const maxLabel = Math.max(1, ...labels.map(l => l.count));
+      document.getElementById('label-breakdown').innerHTML = labels.length === 0
+        ? '<div class="empty">No labels</div>'
+        : labels.map(l => `<div class="stage-bar" onclick="switchTab('conversations');setConvFilter('${l.label || 'new'}');" style="cursor:pointer">
+            <span class="stage-name">${l.label || 'new'}</span>
+            <span class="stage-count">${l.count}</span>
+            <div class="stage-fill"><div class="stage-fill-inner" style="width:${(l.count/maxLabel)*100}%;background:${labelColors[l.label]||'var(--accent)'}"></div></div>
+          </div>`).join('');
+
+      document.getElementById('footer-stats').textContent = `${d.total_conversations} leads | ${d.messages_today} msgs today`;
     }
 
     // ── Conversations ──
-    async function loadConversations() {
-      try {
-        const search = document.getElementById('conv-search').value;
-        const url = search ? `/api/conversations?search=${encodeURIComponent(search)}` : '/api/conversations';
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Request failed: ' + res.status);
-        const data = await res.json();
-        conversations = data;
-      } catch(e) {
-        console.error('loadConversations:', e);
-        conversations = [];
+    let convFilter = 'all';
+    let convStageFilter = '';
+
+    async function setConvFilter(filter, el) {
+      if (filter === 'stage') {
+        convStageFilter = el.value;
+        convFilter = 'all';
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        const allChip = document.querySelector('.filter-chip[data-filter="all"]');
+        if (allChip) allChip.classList.add('active');
+      } else {
+        convFilter = filter;
+        convStageFilter = '';
+        if (document.getElementById('conv-stage-filter')) document.getElementById('conv-stage-filter').value = '';
+        if (el && el.classList) {
+          document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+          el.classList.add('active');
+        } else {
+          document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+          const chip = document.querySelector(`.filter-chip[data-filter="${filter}"]`);
+          if (chip) chip.classList.add('active');
+        }
       }
+      loadConversations();
+    }
+
+    function setConvFilterStage(stage) {
+      convFilter = 'all'; convStageFilter = stage;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      const allChip = document.querySelector('.filter-chip[data-filter="all"]');
+      if (allChip) allChip.classList.add('active');
+      const stageSel = document.getElementById('conv-stage-filter');
+      if (stageSel) stageSel.value = stage;
+      switchTab('conversations');
+      loadConversations();
+    }
+
+    async function loadConversations() {
+      const search = document.getElementById('conv-search').value;
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (convFilter === 'hot') params.set('label', 'hot');
+      else if (convFilter === 'warm') params.set('label', 'warm');
+      else if (convFilter === 'cold') params.set('label', 'cold');
+      else if (convFilter === 'new') params.set('label', 'new');
+      else if (convFilter === 'today') params.set('today', '1');
+      else if (convFilter === 'unread') params.set('unread', '1');
+      else if (convFilter === 'replied') params.set('replied', '1');
+      else if (convFilter === 'noreply') params.set('replied', '0');
+      if (convStageFilter) params.set('stage', convStageFilter);
+      const qs = params.toString();
+      const url = qs ? `/api/conversations?${qs}` : '/api/conversations';
+      conversations = await fetch(url).then(r => r.json());
       renderConversationList();
     }
 
     function renderConversationList() {
       const el = document.getElementById('conv-items');
       let totalUnread = 0;
-      const loadingEl = document.getElementById('conv-loading');
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (conversations.length === 0) {
-        document.getElementById('conv-empty').style.display = 'block';
-        return;
-      } else {
-        document.getElementById('conv-empty').style.display = 'none';
-      }
+      if (conversations.length === 0) { el.innerHTML = '<div class="empty">No conversations yet</div>'; return; }
       el.innerHTML = conversations.map(c => {
         totalUnread += c.unread_count || 0;
         const active = c.id === selectedConvId ? 'active' : '';
         const name = c.contact_name || c.phone;
+        const phone = c.contact_name ? c.phone : '';
+        const addr = c.lead_address || c.property_address || '';
         const time = c.last_message_time ? new Date(c.last_message_time + 'Z').toLocaleString() : '';
         const labelBadge = c.label === 'hot' ? '<span class="badge-small badge-hot">🔥</span>' : '';
         const aiBadge = c.ai_enabled ? '<span class="badge-small badge-ai">AI</span>' : '<span class="badge-small badge-manual">Manual</span>';
         const unreadBadge = c.unread_count > 0 ? `<span class="badge-unread">${c.unread_count}</span>` : '';
-        return `<div class="conv-item ${active}" onclick="selectConversation(${c.id})">
-          <div class="ci-top">
-            <div class="ci-name">${name} ${labelBadge}</div>
-            <div class="ci-time">${time}</div>
-          </div>
+        return `<div class="conv-item ${active}" onclick="openConversation(${c.id})">
+          <div class="ci-top"><div class="ci-name">${name} ${labelBadge}</div><div class="ci-time">${time}</div></div>
+          ${phone ? `<div class="ci-phone">📱 ${phone}</div>` : ''}
+          ${addr ? `<div class="ci-address">📍 ${addr}</div>` : ''}
           <div class="ci-preview">${c.last_message || ''}</div>
           <div class="ci-meta">${aiBadge} ${unreadBadge}</div>
         </div>`;
@@ -453,27 +773,43 @@
     async function selectConversation(id) {
       selectedConvId = id;
       document.querySelectorAll('.conv-item').forEach(el => el.classList.toggle('active', false));
-      document.querySelector(`.conv-item:nth-child(${conversations.findIndex(c => c.id === id) + 1})`)?.classList.add('active');
+      const idx = conversations.findIndex(c => c.id === id);
+      if (idx >= 0) document.querySelectorAll('.conv-item')[idx]?.classList.add('active');
 
-      const data = await fetch(`/api/conversations/${id}`).then(r => r.json());
-      const conv = data;
-      const messages = data.messages || [];
+      const conv = await fetch(`/api/conversations/${id}`).then(r => r.json());
+      const messages = conv.messages || [];
 
       document.getElementById('detail-phone').textContent = conv.contact_name || conv.phone;
       document.getElementById('detail-name').textContent = conv.contact_name ? conv.phone : '';
+      const addrEl = document.getElementById('detail-address');
+      const leadAddr = conv.lead_address || conv.property_address || '';
+      if (leadAddr) { addrEl.textContent = '📍 ' + leadAddr; addrEl.style.display = 'block'; }
+      else { addrEl.style.display = 'none'; }
       document.getElementById('detail-actions').style.display = 'flex';
       document.getElementById('reply-area').style.display = 'flex';
-
-      // AI toggle
-      const toggle = document.getElementById('ai-toggle');
-      toggle.classList.toggle('on', conv.ai_enabled);
-
-      // Label
+      document.getElementById('ai-toggle').classList.toggle('on', conv.ai_enabled);
       const labelSel = document.getElementById('label-select');
       labelSel.style.display = 'inline-block';
       labelSel.value = conv.label || 'new';
 
-      // Messages
+      // Show Push to CRM button if webhook is configured
+      try {
+        const wc = await fetch('/api/webhook-config').then(r => r.json());
+        document.getElementById('push-crm-btn').style.display = wc.webhookUrl ? 'inline-block' : 'none';
+      } catch (e) {
+        document.getElementById('push-crm-btn').style.display = 'none';
+      }
+
+      // CRM
+      document.getElementById('crm-stage').value = conv.lead_stage || 'new';
+      document.getElementById('crm-address').value = conv.lead_address || '';
+      document.getElementById('crm-price').value = conv.lead_asking_price || '';
+      document.getElementById('crm-condition').value = conv.lead_condition || '';
+      document.getElementById('crm-motivation').value = conv.lead_motivation || '';
+      document.getElementById('crm-source').value = conv.lead_source || '';
+      document.getElementById('crm-note-input').value = '';
+      loadNotes();
+
       const msgsEl = document.getElementById('messages-area');
       if (messages.length === 0) {
         msgsEl.innerHTML = '<div class="empty">No messages in this conversation</div>';
@@ -492,11 +828,7 @@
       if (!selectedConvId) return;
       const conv = conversations.find(c => c.id === selectedConvId);
       const newVal = !conv.ai_enabled;
-      await fetch(`/api/conversations/${selectedConvId}`, {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ ai_enabled: newVal })
-      });
+      await fetch(`/api/conversations/${selectedConvId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ ai_enabled: newVal }) });
       conv.ai_enabled = newVal;
       document.getElementById('ai-toggle').classList.toggle('on', newVal);
       renderConversationList();
@@ -504,48 +836,123 @@
 
     async function updateConversationField(field, value) {
       if (!selectedConvId) return;
-      await fetch(`/api/conversations/${selectedConvId}`, {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ [field]: value })
-      });
+      await fetch(`/api/conversations/${selectedConvId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ [field]: value }) });
       loadConversations();
     }
 
-    
-    // ── CRM Auto-Save ──
-    let crmSaveTimers = {};
-    async function crmAutoSave(field, value) {
+    async function saveCrmField(field, value) {
       if (!selectedConvId) return;
-      clearTimeout(crmSaveTimers[field]);
-      crmSaveTimers[field] = setTimeout(async () => {
-        await fetch(\`/api/conversations/\${selectedConvId}\`, {
-          method: 'PATCH',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ [field]: value })
-        });
-        const savedEl = document.getElementById('crm-saved-' + field);
-        if (savedEl) {
-          savedEl.style.display = 'block';
-          setTimeout(() => { savedEl.style.display = 'none'; }, 2000);
-        }
-        // Update the conversation list
-        const conv = conversations.find(c => c.id === selectedConvId);
-        if (conv) conv[field] = value;
-        renderConversationList();
-      }, 500);
+      const val = field === 'lead_asking_price' ? (parseInt(value) || 0) : value;
+      await fetch(`/api/conversations/${selectedConvId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ [field]: val }) });
+      if (field === 'lead_address' && value) {
+        const addrEl = document.getElementById('detail-address');
+        addrEl.textContent = '📍 ' + value;
+        addrEl.style.display = 'block';
+      }
     }
+
+    // ── Push to CRM (Go High Level) ──
+    async function pushToCRM() {
+      if (!selectedConvId) return;
+      const btn = document.getElementById('push-crm-btn');
+      const origText = btn.textContent;
+      btn.textContent = '⏳ Pushing...';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/api/conversations/${selectedConvId}/push-to-crm`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          btn.textContent = '✅ Pushed!';
+          btn.style.background = '#16a34a';
+          setTimeout(() => { btn.textContent = origText; btn.style.background = '#22c55e'; }, 3000);
+        } else {
+          alert('Push failed: ' + (data.error || 'Unknown error'));
+          btn.textContent = origText;
+        }
+      } catch (e) {
+        alert('Push failed: ' + e.message);
+        btn.textContent = origText;
+      }
+      btn.disabled = false;
+    }
+
+    // ── Notes (timestamped, multi-note) ──
+    async function loadNotes() {
+      if (!selectedConvId) return;
+      const notes = await fetch(`/api/conversations/${selectedConvId}/notes`).then(r => r.json());
+      const el = document.getElementById('crm-notes-list');
+      if (!notes || notes.length === 0) {
+        el.innerHTML = '<div style="font-size:.7rem;color:var(--text3);padding:.25rem 0;">No notes yet</div>';
+        return;
+      }
+      el.innerHTML = notes.map(n => {
+        const time = new Date(n.created_at + 'Z').toLocaleString();
+        return `<div style="background:var(--bg);padding:.35rem .5rem;border-radius:6px;margin-bottom:4px;font-size:.75rem;display:flex;justify-content:space-between;align-items:flex-start;gap:4px;">
+          <div style="flex:1;min-width:0;">
+            <div style="color:var(--text);word-wrap:break-word;">${n.notes}</div>
+            <div style="color:var(--text3);font-size:.65rem;margin-top:2px;">${time}</div>
+          </div>
+          <button class="btn btn-sm" style="color:var(--red);border-color:var(--red);flex-shrink:0;padding:.1rem .35rem;font-size:.65rem;" onclick="deleteNote(${n.id})">✕</button>
+        </div>`;
+      }).join('');
+    }
+
+    async function addNote() {
+      if (!selectedConvId) return;
+      const input = document.getElementById('crm-note-input');
+      const text = input.value.trim();
+      if (!text) return;
+      await fetch(`/api/conversations/${selectedConvId}/notes`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ notes: text }) });
+      input.value = '';
+      loadNotes();
+    }
+
+    async function deleteNote(noteId) {
+      if (!selectedConvId) return;
+      await fetch(`/api/conversations/${selectedConvId}/notes/${noteId}`, { method: 'DELETE' });
+      loadNotes();
+    }
+
+    // ── Comps & ARV ──
+    async function pullComps() {
+      if (!selectedConvId) return;
+      const btn = document.getElementById('comps-btn');
+      btn.textContent = '⏳ Pulling...';
+      btn.disabled = true;
+      const address = document.getElementById('crm-address').value.trim();
+      try {
+        const data = await fetch(`/api/conversations/${selectedConvId}/comps`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ address })
+        }).then(r => r.json());
+
+        if (!data.success) {
+          alert(data.error || 'Failed to pull comps');
+          return;
+        }
+
+        const result = document.getElementById('comps-result');
+        result.style.display = 'block';
+        document.getElementById('arv-value').textContent = data.arv ? '$' + data.arv.toLocaleString() : 'N/A';
+        document.getElementById('mao-value').textContent = data.mao ? '$' + data.mao.toLocaleString() : 'N/A';
+        document.getElementById('arv-formula').textContent = data.formula || '';
+        if (data.source === 'estimated') {
+          document.getElementById('arv-formula').textContent = (data.formula || '') + ' (estimated — add BatchLeads for real comps)';
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      } finally {
+        btn.textContent = '📊 Pull Comps & ARV';
+        btn.disabled = false;
+      }
+    }
+
     async function sendReply() {
       const input = document.getElementById('reply-input');
       const msg = input.value.trim();
       if (!msg || !selectedConvId) return;
-
-      const res = await fetch(`/api/conversations/${selectedConvId}/reply`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ message: msg })
-      });
-      const data = await res.json();
+      await fetch(`/api/conversations/${selectedConvId}/reply`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ message: msg }) });
       input.value = '';
       selectConversation(selectedConvId);
       loadConversations();
@@ -554,26 +961,14 @@
     // ── Knowledge Base ──
     async function loadKnowledgeBase() {
       const data = await fetch('/api/knowledge-base').then(r => r.json());
-      kbItems = data;
       const el = document.getElementById('kb-list');
-      if (data.length === 0) { el.innerHTML = '<div class="empty">No knowledge base articles yet. Add some above!</div>'; return; }
-
-      // Group by category
+      if (data.length === 0) { el.innerHTML = '<div class="empty">No knowledge base articles yet</div>'; return; }
       const groups = {};
-      data.forEach(k => {
-        const cat = k.category || 'general';
-        if (!groups[cat]) groups[cat] = [];
-        groups[cat].push(k);
-      });
-
+      data.forEach(k => { const cat = k.category || 'general'; if (!groups[cat]) groups[cat] = []; groups[cat].push(k); });
       el.innerHTML = Object.entries(groups).map(([cat, items]) => `
-        <h4 style="font-size:.85rem;color:#94a3b8;margin:1rem 0 .5rem;text-transform:capitalize;">${cat}</h4>
-        ${items.map(k => `<div class="kb-item">
-          <div class="kb-q">${k.question}</div>
-          <div class="kb-a">${k.answer}</div>
-          <div class="kb-actions">
-            <button class="btn btn-sm btn-danger" onclick="deleteKB(${k.id})">Delete</button>
-          </div>
+        <h4 style="font-size:.85rem;color:var(--text2);margin:1rem 0 .5rem;text-transform:capitalize;">${cat}</h4>
+        ${items.map(k => `<div class="kb-item"><div class="kb-q">${k.question}</div><div class="kb-a">${k.answer}</div>
+          <div class="kb-actions"><button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="deleteKB(${k.id})">Delete</button></div>
         </div>`).join('')}
       `).join('');
     }
@@ -583,11 +978,7 @@
       const a = document.getElementById('kb-answer').value.trim();
       const c = document.getElementById('kb-category').value.trim();
       if (!q || !a) return alert('Question and answer required');
-      await fetch('/api/knowledge-base', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ question: q, answer: a, category: c || 'general' })
-      });
+      await fetch('/api/knowledge-base', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ question: q, answer: a, category: c || 'general' }) });
       document.getElementById('kb-question').value = '';
       document.getElementById('kb-answer').value = '';
       document.getElementById('kb-category').value = '';
@@ -607,107 +998,214 @@
       el.innerHTML = data.map(o => `<div class="kb-item">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <span>${o.phone}</span>
-          <span style="font-size:.75rem;color:#64748b;">${new Date(o.created_at + 'Z').toLocaleDateString()}</span>
+          <span style="font-size:.75rem;color:var(--text3)">${new Date(o.created_at + 'Z').toLocaleDateString()}</span>
           <button class="btn btn-sm" onclick="removeOptOut(${o.id})">Remove</button>
-        </div>
-      </div>`).join('');
+        </div></div>`).join('');
     }
 
-    async function removeOptOut(id) {
-      await fetch(`/api/opt-outs/${id}`, { method: 'DELETE' });
-      loadOptOuts();
-    }
+    async function removeOptOut(id) { await fetch(`/api/opt-outs/${id}`, { method: 'DELETE' }); loadOptOuts(); }
 
-    // ── Stats ──
-    async function loadStats() {
-      const stats = await fetch('/api/stats').then(r => r.json());
-      const grid = document.getElementById('stats-grid');
-      grid.innerHTML = `
-        <div class="stat-card"><div class="stat-value">${stats.total_conversations}</div><div class="stat-label">Total Conversations</div></div>
-        <div class="stat-card"><div class="stat-value">${stats.active_conversations}</div><div class="stat-label">Active</div></div>
-        <div class="stat-card"><div class="stat-value">${stats.total_unread}</div><div class="stat-label">Unread</div></div>
-        <div class="stat-card"><div class="stat-value">${stats.messages_today}</div><div class="stat-label">Messages Today</div></div>
-        <div class="stat-card"><div class="stat-value">${stats.ai_enabled}</div><div class="stat-label">AI Enabled</div></div>
-        <div class="stat-card"><div class="stat-value">${stats.opt_outs}</div><div class="stat-label">Opt-Outs</div></div>
-      `;
-      document.getElementById('footer-stats').textContent = `${stats.total_conversations} convos | ${stats.messages_today} msgs today`;
-    }
-
-    // ── Global AI Toggle ──
+    // ── Global AI ──
     async function globalAIToggle(enabled) {
-      await fetch('/api/ai-toggle-all', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ enabled })
-      });
+      await fetch('/api/ai-toggle-all', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ enabled }) });
       loadConversations();
-      loadStats();
     }
 
-    
-    // ── Mobile Functions ──
-    function showMobileSidebar() {
-      document.getElementById('sidebar-overlay').classList.add('show');
-    }
-    function hideMobileSidebar() {
-      document.getElementById('sidebar-overlay').classList.remove('show');
-    }
-    function openConversation(id) {
-      selectConversation(id);
-      document.querySelector('.conv-list').classList.add('hide');
-      document.querySelector('.conv-detail').classList.add('show');
-      document.getElementById('mobile-back').classList.add('show');
-      document.getElementById('mobile-title').textContent = 'Conversation';
-    }
-    function showConversationList() {
-      document.querySelector('.conv-list').classList.remove('hide');
-      document.querySelector('.conv-detail').classList.remove('show');
-      document.getElementById('mobile-back').classList.remove('show');
-      document.getElementById('mobile-title').textContent = 'NorCal SMS Agent';
-    }
-
-    // Override selectConversation to also handle mobile
-    const origSelect = selectConversation;
-    selectConversation = function(id) {
-      origSelect(id);
-      if (window.innerWidth <= 900) {
-        document.querySelector('.conv-list').classList.add('hide');
-        document.querySelector('.conv-detail').classList.add('show');
-        document.getElementById('mobile-back').classList.add('show');
-        document.getElementById('mobile-title').textContent = 'Conversation';
-      }
-    };
-
-    // Update mobile unread badge
-    const origRender = renderConversationList;
-    renderConversationList = function() {
-      origRender();
-      const badge = document.getElementById('mobile-badge');
-      const total = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
-      badge.textContent = total || '0';
-      const mobileBadge = document.getElementById('unread-badge-mobile');
-      if (mobileBadge) mobileBadge.textContent = total || '0';
-    };
-
-    // Update mobile footer stats
-    const origStats = loadStats;
-    loadStats = function() {
-      origStats();
-      fetch('/api/stats').then(r => r.json()).then(stats => {
-        const el = document.getElementById('footer-stats-mobile');
-        if (el) el.textContent = stats.total_conversations + ' convos | ' + stats.messages_today + ' msgs today';
-      });
-    };
-
-    // ── Auto-refresh conversations every 10 seconds ──
+    // ── Auto-refresh ──
     setInterval(() => {
+      if (currentTab === 'dashboard') loadDashboard();
       if (currentTab === 'conversations') loadConversations();
-    }, 10000);
+    }, 15000);
 
     // ── Logout ──
-    async function logout() {
-      await fetch('/api/logout', { method: 'POST' });
-      window.location.href = '/login';
+    async function logout() { await fetch('/api/logout', { method: 'POST' }); window.location.href = '/login'; }
+
+    // ── New Conversation ──
+    function openNewConversation() {
+      const phone = prompt('Enter phone number (e.g. 9165551234):');
+      if (!phone) return;
+      const message = prompt('Enter your message:');
+      if (!message) return;
+      const name = prompt('Contact name (optional):');
+      const ai = confirm('Enable AI auto-reply?');
+
+      fetch('/api/conversations/new', { method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ phone: phone.trim(), message: message.trim(), contact_name: name || '', ai_enabled: ai })
+      }).then(r => r.json()).then(data => {
+        if (data.success) { alert('Message sent!'); switchTab('conversations'); loadConversations(); }
+        else { alert('Error: ' + (data.error || data.sms_error || 'Unknown')); }
+      }).catch(e => alert('Failed: ' + e.message));
+    }
+
+    // ── Skip Trace ──
+    let currentSkipJob = null;
+    let tracedLeads = [];  // name/address data from skip trace for blast
+    let skipPollInterval = null;
+
+    async function startSkipTrace() {
+      const text = document.getElementById('skip-addresses').value.trim();
+      if (!text) return alert('Enter at least one address');
+
+      const statusEl = document.getElementById('skip-trace-status');
+      const progressEl = document.getElementById('skip-progress');
+      const statsEl = document.getElementById('skip-stats');
+      const resultsEl = document.getElementById('skip-trace-results');
+
+      statusEl.style.display = 'block';
+      progressEl.style.width = '5%';
+      statsEl.textContent = 'Starting skip trace...';
+      resultsEl.innerHTML = '';
+
+      try {
+        const resp = await fetch('/api/skip-trace', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ csv: text })
+        });
+        const data = await resp.json();
+        if (data.error) { statsEl.textContent = 'Error: ' + data.error; return; }
+
+        currentSkipJob = data.jobId;
+        statsEl.textContent = `Tracing ${data.total} addresses... (${data.cached || 0} already cached)`;
+        pollSkipJob();
+      } catch (e) {
+        statsEl.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    async function startSkipTraceAndBlast() {
+      const addresses = document.getElementById('skip-addresses').value.trim();
+      const message = document.getElementById('skip-blast-message').value.trim();
+      const delay = parseInt(document.getElementById('skip-blast-delay').value) || 300;
+
+      if (!addresses) return alert('Enter at least one address');
+      if (!message) return alert('Enter a blast message');
+
+      const statusEl = document.getElementById('skip-blast-status');
+      statusEl.style.display = 'block';
+      statusEl.innerHTML = '<div style="color:var(--accent);font-size:.8rem;">Starting skip trace + blast pipeline...</div>';
+
+      try {
+        const resp = await fetch('/api/skip-trace/upload-and-blast', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ csv: addresses, message, delayMs: delay })
+        });
+        const data = await resp.json();
+        if (data.error) { statusEl.innerHTML = '<div style="color:var(--red);">Error: ' + data.error + '</div>'; return; }
+
+        statusEl.innerHTML = `
+          <div style="color:var(--accent);font-size:.8rem;">
+            Trace complete — ${data.addressesFound} phones found from ${data.totalAddresses} addresses
+            ${data.blastJobId ? '<br>SMS blast is sending now...' : '<br>No phone numbers found to blast'}
+          </div>
+        `;
+        if (data.blastJobId) currentSkipJob = data.blastJobId;
+      } catch (e) {
+        statusEl.innerHTML = '<div style="color:var(--red);">Error: ' + e.message + '</div>';
+      }
+    }
+
+    function pollSkipJob() {
+      if (!currentSkipJob) return;
+      if (skipPollInterval) clearInterval(skipPollInterval);
+
+      skipPollInterval = setInterval(async () => {
+        try {
+          const resp = await fetch('/api/skip-trace/' + currentSkipJob);
+          const data = await resp.json();
+
+          const progressEl = document.getElementById('skip-progress');
+          const statsEl = document.getElementById('skip-stats');
+          const resultsEl = document.getElementById('skip-trace-results');
+
+          const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 100;
+          if (data.status === 'completed') progressEl.style.width = '100%';
+          else progressEl.style.width = pct + '%';
+          statsEl.textContent = `${data.completed || 0}/${data.total} done — ${data.found || 0} phones found`;
+
+          if (data.status === 'completed' && data.phoneLeads) {
+            clearInterval(skipPollInterval);
+            statsEl.textContent = `Complete! ${data.found}/${data.total} addresses found phone numbers`;
+
+            // Store leads with name/address for blast
+            tracedLeads = data.phoneLeads;
+
+            if (data.phoneLeads.length > 0) {
+              resultsEl.innerHTML = `
+                <div style="background:var(--accent-bg);padding:.75rem;border-radius:var(--radius);border:1px solid var(--accent);margin-bottom:.5rem;">
+                  <strong>${data.phoneLeads.length} phone numbers found</strong>
+                  <button class="btn btn-sm btn-primary" style="margin-left:.5rem;" onclick="blastTracedNumbers()">Blast These Numbers</button>
+                </div>
+                ${data.phoneLeads.slice(0, 20).map(l => `
+                  <div style="background:var(--bg);padding:.5rem .75rem;border-radius:6px;margin-bottom:4px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                    <div>
+                      <div style="color:var(--text);">${l.ownerName || 'Unknown'} — ${l.address}</div>
+                      <div style="color:var(--accent);margin-top:2px;">${l.phones.join(', ')}</div>
+                    </div>
+                    <span style="font-size:.65rem;color:var(--text3);">${l.source}${l.cached ? ' (cached)' : ''}</span>
+                  </div>
+                `).join('')}
+                ${data.phoneLeads.length > 20 ? `<div style="font-size:.75rem;color:var(--text3);text-align:center;padding:.5rem;">... and ${data.phoneLeads.length - 20} more</div>` : ''}
+              `;
+            } else {
+              resultsEl.innerHTML = '<div class="empty">No phone numbers found for any address</div>';
+            }
+
+            loadSkipTraceJobs();
+          }
+        } catch (e) { /* poll silently */ }
+      }, 1500);
+    }
+
+    function blastTracedNumbers() {
+      const message = prompt('Enter your blast message:');
+      if (!message) return;
+
+      // Build lead objects with name + address from stored trace results
+      const leads = [];
+      if (tracedLeads && tracedLeads.length > 0) {
+        tracedLeads.forEach(l => {
+          (l.phones || [l.phone]).forEach(phone => {
+            if (phone) leads.push({
+              phone: phone.startsWith('+') ? phone : '+1' + phone.replace(/\D/g, ''),
+              name: l.ownerName || '',
+              address: l.address || ''
+            });
+          });
+        });
+      }
+
+      if (leads.length === 0) return alert('No phone numbers found');
+
+      fetch('/api/blast', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ numbers: leads, message, delayMs: 300 })
+      }).then(r => r.json()).then(data => {
+        alert(`Blast started! ${data.total} messages queued.`);
+      });
+    }
+
+    async function loadSkipTraceJobs() {
+      try {
+        const jobs = await fetch('/api/skip-traces').then(r => r.json());
+        const el = document.getElementById('skip-jobs-list');
+        if (!jobs || jobs.length === 0) {
+          el.innerHTML = '<div class="empty">No skip trace jobs yet</div>';
+          return;
+        }
+        el.innerHTML = jobs.map(j => `
+          <div style="background:var(--bg);padding:.6rem .75rem;border-radius:6px;margin-bottom:4px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+            <div>
+              <span style="color:var(--text);">${j.status === 'completed' ? '✅' : '⏳'} ${j.id}</span>
+              <span style="color:var(--text2);margin-left:.5rem;">${j.found || 0}/${j.total} found</span>
+              ${j.phase ? `<span style="font-size:.65rem;color:var(--text3);margin-left:.5rem;">(${j.phase})</span>` : ''}
+            </div>
+            <span style="font-size:.65rem;color:var(--text3);">${new Date(j.startedAt).toLocaleString()}</span>
+          </div>
+        `).join('');
+      } catch (e) { /* ignore */ }
     }
   </script>
 </body>
