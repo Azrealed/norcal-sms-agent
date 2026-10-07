@@ -12,7 +12,8 @@ const fs = require('fs');
 const { extractPropertyInfo, determineStage, scoreMessage } = require('./lib/conversation');
 const { phonesMatch, toE164 } = require('./lib/phones');
 const { canSendSms, isSuppressed, isTestMode } = require('./lib/policy');
-const { planInbound } = require('./lib/inbound');
+const { planInbound, hasPriorInterest } = require('./lib/inbound');
+const { smsblastOptOut } = require('./lib/smsblast-optout');
 const { normalizeInboundPayload } = require('./lib/payload');
 const { buildSystemPrompt, composeReply, finalizeReply, HONEST_REPLY, WHO_REPLY, BUSINESS_INFO_REPLY, isIdentityQuestion, isWhoQuestion, isBusinessInfoQuestion, DEFAULT_DAILY_BLAST } = require('./lib/persona');
 const { syncKnowledgeBase } = require('./lib/knowledge');
@@ -130,6 +131,9 @@ for (const [col, def] of crmCols) {
 }
 
 ensureConversationColumns(db);
+for (const [col, def] of [['smsblast_status', 'TEXT DEFAULT NULL'], ['smsblast_synced_at', 'TEXT DEFAULT NULL']]) {
+  try { db.exec(`ALTER TABLE opt_outs ADD COLUMN ${col} ${def}`); console.log(`Migrated: added opt_outs.${col}`); } catch (e) { /* exists */ }
+}
 try {
   const kbSync = syncKnowledgeBase(db);
   console.log(`[KB] synced ${kbSync.upserted} standard answers; turned off ${kbSync.deactivated.length} outdated answers`);
@@ -289,6 +293,24 @@ async function getAiReply(conversation, messages, contactName, leadContext = {})
   return null;
 }
 
+/** Archive a conversation (status='archived'); it drops out of the main inbox. Never deletes. */
+function archiveConversation(convId, why) {
+  db.prepare("UPDATE conversations SET status = 'archived', updated_at = datetime('now') WHERE id = ?").run(convId);
+  console.log(`[Archive] conversation ${convId} archived (${why})`);
+}
+
+/** Tell smsblast to suppress this number on future blasts, and record the result on the opt-out row. */
+async function syncOptOutToSmsblast(phone) {
+  const e164 = toE164(phone) || phone;
+  const r = await smsblastOptOut(e164, { apiKey: SMSBLAST_API_KEY });
+  const rows = db.prepare('SELECT id, phone FROM opt_outs').all().filter((row) => phonesMatch(row.phone, phone));
+  for (const row of rows) {
+    db.prepare("UPDATE opt_outs SET smsblast_status = ?, smsblast_synced_at = datetime('now') WHERE id = ?").run(r.status, row.id);
+  }
+  console.log(`[OptOut] ${e164} smsblast opt-out: ${r.status}`);
+  return r;
+}
+
 /** Check if a phone is opted out, ignoring formatting differences. */
 function isOptedOut(phone) {
   const rows = db.prepare('SELECT phone FROM opt_outs').all();
@@ -318,14 +340,21 @@ async function handleInboundWebhook(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  const existingConv = db.prepare('SELECT * FROM conversations WHERE phone = ?').get(fromPhone);
+  const priorInbound = existingConv
+    ? db.prepare("SELECT body FROM messages WHERE conversation_id = ? AND direction = 'inbound' ORDER BY timestamp ASC").all(existingConv.id).map((r) => r.body)
+    : [];
   const plan = planInbound({
     phone: fromPhone,
     message,
     env: process.env,
     optedOut: isOptedOut(fromPhone),
+    priorInterest: hasPriorInterest(priorInbound, { inGhl: !!(existingConv && (existingConv.ghl_contact_id || existingConv.crm_pushed)) }),
+    archived: !!(existingConv && existingConv.status === 'archived'),
   });
 
   if (plan.reason === 'already_opted_out') {
+    if (existingConv && existingConv.ai_enabled && existingConv.status !== 'archived') archiveConversation(existingConv.id, 'opted_out');
     console.log(`[OptOut] ${fromPhone} is opted out, ignoring`);
     return res.json({ handled: true, reply: null });
   }
@@ -333,6 +362,7 @@ async function handleInboundWebhook(req, res) {
   if (plan.optOut) {
     db.prepare('INSERT OR IGNORE INTO opt_outs (phone, reason) VALUES (?, ?)').run(toE164(fromPhone) || fromPhone, plan.reason === 'wrong_number' ? 'wrong_number' : 'keyword_stop');
     console.log(`[OptOut] ${fromPhone} opted out. No reply will be sent.`);
+    await syncOptOutToSmsblast(fromPhone);
   }
   if (plan.clearOptOut) {
     const opted = db.prepare('SELECT id, phone FROM opt_outs').all();
@@ -370,6 +400,16 @@ async function handleInboundWebhook(req, res) {
     conv.property_address = norm.contactAddress;
   }
 
+  // Archive / un-archive (never delete). Conversations Derek handles himself (AI off) are not auto-archived.
+  if (plan.archive && conv.ai_enabled && conv.status !== 'archived') {
+    archiveConversation(convId, plan.reason);
+    conv.status = 'archived';
+  } else if (plan.unarchive && conv.status === 'archived') {
+    db.prepare("UPDATE conversations SET status = 'active', updated_at = datetime('now') WHERE id = ?").run(convId);
+    conv.status = 'active';
+    console.log(`[Archive] ${fromPhone} said something positive; conversation un-archived`);
+  }
+
   // Store the inbound message
   db.prepare(`INSERT INTO messages (conversation_id, body, direction, from_number, to_number, status, smsblast_sid)
     VALUES (?, ?, 'inbound', ?, ?, 'received', ?)`).run(convId, message, fromPhone, toPhone, sid);
@@ -382,8 +422,9 @@ async function handleInboundWebhook(req, res) {
     if (plan.reason === 'wrong_number') console.log(`[WrongNumber] ${fromPhone} marked do-not-text; no reply sent`);
     if (plan.reason === 'not_interested') {
       db.prepare("UPDATE conversations SET label = 'cold', updated_at = datetime('now') WHERE id = ?").run(convId);
-      console.log(`[NotInterested] ${fromPhone} clear no; marked not-interested (cold); no reply and no CRM push`);
+      console.log(`[NotInterested] ${fromPhone} clear no; archived (not opted out); no reply and no CRM push`);
     }
+    if (plan.reason === 'archived_no') console.log(`[Archive] ${fromPhone} archived no; nothing positive, stays archived; no reply`);
     return res.json({ handled: true, conversation_id: convId, reply: null, reason: plan.reason });
   }
 
@@ -617,6 +658,7 @@ app.get('/api/conversations', requireAuth, (req, res) => {
   let sql = 'SELECT * FROM conversations WHERE 1=1';
   const params = [];
   if (status) { sql += ' AND status = ?'; params.push(status); }
+  else if (!search) { sql += " AND (status IS NULL OR status != 'archived')"; }
   if (label) { sql += ' AND label = ?'; params.push(label); }
   if (stage) { sql += ' AND lead_stage = ?'; params.push(stage); }
   if (search) { sql += ' AND (phone LIKE ? OR contact_name LIKE ? OR property_address LIKE ? OR lead_address LIKE ?)';
