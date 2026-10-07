@@ -13,6 +13,7 @@ const { extractPropertyInfo, determineStage, scoreMessage } = require('./lib/con
 const { phonesMatch, toE164 } = require('./lib/phones');
 const { canSendSms, isSuppressed, isTestMode } = require('./lib/policy');
 const { planInbound } = require('./lib/inbound');
+const { normalizeInboundPayload } = require('./lib/payload');
 const { buildSystemPrompt, composeReply, HONEST_REPLY, WHO_REPLY, isIdentityQuestion, isWhoQuestion, DEFAULT_DAILY_BLAST } = require('./lib/persona');
 const { syncKnowledgeBase } = require('./lib/knowledge');
 const { syncSellerToGhl } = require('./lib/ghl');
@@ -287,13 +288,18 @@ async function handleInboundWebhook(req, res) {
   const body = req.body;
   console.log(`[Inbound] ${JSON.stringify(body)}`);
 
-  // smsblast.io payload — normalize the fields
-  const fromPhone = body.from || body.From || body.phone || '';
-  const toPhone = body.to || body.To || SMSBLAST_FROM;
-  const message = body.message || body.Body || body.text || '';
-  const sid = body.messageSid || body.MessageSid || body.id || '';
+  // smsblast.io payload — normalize the fields (nested contact/message or flat)
+  const norm = normalizeInboundPayload(body);
+  const fromPhone = norm.fromPhone;
+  const toPhone = norm.toPhone || SMSBLAST_FROM;
+  const message = norm.message;
+  const sid = norm.sid;
 
-  if (!fromPhone || !message) {
+  if (!norm.actionable) {
+    if (norm.event) {
+      console.log(`[Inbound] event "${norm.event}" logged only; no reply and no CRM push`);
+      return res.json({ handled: true, reply: null, reason: 'not_an_inbound_message' });
+    }
     console.error('[Inbound] Missing from or message');
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -1769,6 +1775,11 @@ app.post('/api/daily-pipeline', requireDailyAuth, async (req, res) => {
     return res.status(500).json({ error: 'SMSBLAST_API_KEY not configured' });
   }
 
+  if (String(process.env.DAILY_PIPELINE_ENABLED || '').trim().toLowerCase() !== 'true') {
+    console.log('[DailyPipeline] Disabled (DAILY_PIPELINE_ENABLED is not true). Nothing pulled, nothing texted.');
+    return res.status(403).json({ error: 'Daily pipeline is disabled', status: 'disabled' });
+  }
+
   const blastMessage = message || DEFAULT_DAILY_BLAST;
   if (isTestMode() && !dryRun) {
     console.log('[DailyPipeline] Test mode is ON. Only AI_REPLY_ALLOWLIST numbers can be texted.');
@@ -1972,5 +1983,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   SMS API:   smsblast.io (via API key)`);
   console.log(`   AI Model:  ${AI_MODEL}`);
   console.log(`   Test mode: ${isTestMode() ? 'ON' : 'OFF'} (${allowCount} allowlisted number${allowCount === 1 ? '' : 's'})`);
+  console.log(`   Daily pipeline: ${String(process.env.DAILY_PIPELINE_ENABLED || '').trim().toLowerCase() === 'true' ? 'ENABLED' : 'disabled'}`);
   console.log(`   GHL:       ${process.env.GHL_API_TOKEN && process.env.GHL_LOCATION_ID ? 'configured' : 'not configured'}\n`);
 });
