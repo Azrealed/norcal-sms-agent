@@ -30,3 +30,12 @@ test('"phone does not belong to" and "do not disturb" are wrong number / opt-out
   assert.equal(isOptOutMessage(m), true);
   assert.equal(isWrongNumber('No one here by that name'), true);
 });
+
+test('"I\'m not <ordinary word>" is not a wrong number', () => {
+  for (const m of ["You tell me. I'm not asking to buy it", "I'm not sure yet", "I'm not in a hurry", 'I am not ready to sell', "I'm not interested right now but maybe later"]) {
+    assert.equal(isWrongNumber(m), false, m);
+  }
+  for (const m of ["I'm not Teresa.", 'I am not wendy. I am dave', 'This is not Mike', "Im not lisa"]) {
+    assert.equal(isWrongNumber(m), true, m);
+  }
+});
