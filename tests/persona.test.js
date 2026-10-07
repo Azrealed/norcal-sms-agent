@@ -31,13 +31,14 @@ test('real person, AI, and human questions get the same honest answer', () => {
   }
 });
 
-test('who is this names the company and still says it is an AI assistant', () => {
+test('who is this gives only "Derek\'s AI assistant", no company', () => {
   const reply = composeReply({
     inbound: 'Who is this?',
     modelReply: 'This is Derek from NorCal Home Offer. I am an investor buying homes.',
   });
   assert.equal(reply, WHO_REPLY);
-  assert.match(reply, /NorCal Home Offer/);
+  assert.equal(reply, "This is Derek's AI assistant.");
+  assert.doesNotMatch(reply, /NorCal|Redding|cash home buyer|\.com/i);
   assert.match(reply, /AI assistant/);
   assert.doesNotMatch(reply, /I am an investor|This is Derek from/i);
 });
@@ -69,7 +70,8 @@ test('the system prompt requires honesty and the corrected facts', () => {
   assert.match(prompt, /Derek's AI assistant/);
   assert.match(prompt, /Never claim to be human/);
   assert.match(prompt, /voice notes/);
-  assert.match(prompt, /NorCal Home Offer/);
+  assert.doesNotMatch(prompt, /NorCal|Redding|Northern California|cash home|\.com|www\./i);
+  assert.match(prompt, /NEVER give out business information/);
   assert.match(prompt, /as little as 7 days/);
   assert.match(prompt, /case by case/);
   assert.match(prompt, /talk through closing costs/);
