@@ -14,7 +14,7 @@ const { phonesMatch, toE164 } = require('./lib/phones');
 const { canSendSms, isSuppressed, isTestMode } = require('./lib/policy');
 const { planInbound } = require('./lib/inbound');
 const { normalizeInboundPayload } = require('./lib/payload');
-const { buildSystemPrompt, composeReply, HONEST_REPLY, WHO_REPLY, isIdentityQuestion, isWhoQuestion, DEFAULT_DAILY_BLAST } = require('./lib/persona');
+const { buildSystemPrompt, composeReply, finalizeReply, HONEST_REPLY, WHO_REPLY, BUSINESS_INFO_REPLY, isIdentityQuestion, isWhoQuestion, isBusinessInfoQuestion, DEFAULT_DAILY_BLAST } = require('./lib/persona');
 const { syncKnowledgeBase } = require('./lib/knowledge');
 const { syncSellerToGhl } = require('./lib/ghl');
 const { ensureConversationColumns } = require('./lib/schema');
@@ -441,6 +441,8 @@ async function handleInboundWebhook(req, res) {
       replyText = HONEST_REPLY;
     } else if (isWhoQuestion(message)) {
       replyText = WHO_REPLY;
+    } else if (isBusinessInfoQuestion(message)) {
+      replyText = BUSINESS_INFO_REPLY;
     } else if (stage === 'cold') {
       replyText = composeReply({
         inbound: message,
@@ -511,6 +513,15 @@ View: ${DASHBOARD_URL || 'https://norcal-sms-agent.fly.dev'}/#conv-${convId}`;
         }
       }
 
+    }
+
+    // Final guard on every outbound text: never any business info; "Derek" only in the identity line.
+    if (replyText) {
+      const before = replyText;
+      replyText = finalizeReply(replyText, {
+        allowDerekIdentity: replyText.startsWith(HONEST_REPLY) || replyText.startsWith(WHO_REPLY),
+      });
+      if (replyText !== before) console.log(`[Filter] ${fromPhone} outbound text was cleaned by the final guard`);
     }
 
     if (!replyText) {
