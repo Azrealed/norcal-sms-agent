@@ -346,6 +346,16 @@ async function handleInboundWebhook(req, res) {
     conv = db.prepare('SELECT * FROM conversations WHERE id = ?').get(convId);
   }
 
+  // Fill in the seller's name and property address from the smsblast contact when we don't have them yet
+  if (norm.contactName && !conv.contact_name) {
+    db.prepare('UPDATE conversations SET contact_name = ? WHERE id = ?').run(norm.contactName, convId);
+    conv.contact_name = norm.contactName;
+  }
+  if (norm.contactAddress && !conv.property_address) {
+    db.prepare('UPDATE conversations SET property_address = ? WHERE id = ?').run(norm.contactAddress, convId);
+    conv.property_address = norm.contactAddress;
+  }
+
   // Store the inbound message
   db.prepare(`INSERT INTO messages (conversation_id, body, direction, from_number, to_number, status, smsblast_sid)
     VALUES (?, ?, 'inbound', ?, ?, 'received', ?)`).run(convId, message, fromPhone, toPhone, sid);
