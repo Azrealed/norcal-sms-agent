@@ -380,6 +380,10 @@ async function handleInboundWebhook(req, res) {
     if (plan.reason === 'test_mode') console.log(`[TestMode] stored inbound from ${fromPhone}; AI reply skipped`);
     if (plan.reason === 'suppressed') console.log(`[Suppressed] stored inbound from ${fromPhone}; no text will be sent`);
     if (plan.reason === 'wrong_number') console.log(`[WrongNumber] ${fromPhone} marked do-not-text; no reply sent`);
+    if (plan.reason === 'not_interested') {
+      db.prepare("UPDATE conversations SET label = 'cold', updated_at = datetime('now') WHERE id = ?").run(convId);
+      console.log(`[NotInterested] ${fromPhone} clear no; marked not-interested (cold); no reply and no CRM push`);
+    }
     return res.json({ handled: true, conversation_id: convId, reply: null, reason: plan.reason });
   }
 
