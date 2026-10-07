@@ -13,3 +13,12 @@ test('real wrong-number replies are caught', () => {
     assert.equal(isWrongNumber(m), true, m);
   }
 });
+
+test('"wrong phone number" variants are caught; "no not really" is not', () => {
+  for (const m of ['Wrong phone number.', 'wrong cell number', 'Wrong #', "Wrong person I'm not lisa", 'You have the wrong number']) {
+    assert.equal(isWrongNumber(m), true, m);
+  }
+  for (const m of ['No not really, thank you!', 'No', 'Probably not.']) {
+    assert.equal(isWrongNumber(m), false, m);
+  }
+});
