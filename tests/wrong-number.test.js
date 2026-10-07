@@ -22,3 +22,11 @@ test('"wrong phone number" variants are caught; "no not really" is not', () => {
     assert.equal(isWrongNumber(m), false, m);
   }
 });
+
+test('"phone does not belong to" and "do not disturb" are wrong number / opt-out', () => {
+  const { isOptOutMessage } = require('../lib/policy');
+  const m = 'Derek, This phone does not belong to Mary.Please do not disturb me.';
+  assert.equal(isWrongNumber(m), true);
+  assert.equal(isOptOutMessage(m), true);
+  assert.equal(isWrongNumber('No one here by that name'), true);
+});
